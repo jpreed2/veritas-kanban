@@ -2,6 +2,7 @@ import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 import { TaskService } from '../services/task-service.js';
 import { WorktreeService } from '../services/worktree-service.js';
+import { activityService } from '../services/activity-service.js';
 import type { CreateTaskInput, UpdateTaskInput } from '@veritas-kanban/shared';
 
 const router: RouterType = Router();
@@ -99,6 +100,14 @@ router.post('/', async (req, res) => {
   try {
     const input = createTaskSchema.parse(req.body) as CreateTaskInput;
     const task = await taskService.createTask(input);
+    
+    // Log activity
+    await activityService.logActivity('task_created', task.id, task.title, {
+      type: task.type,
+      priority: task.priority,
+      project: task.project,
+    });
+    
     res.status(201).json(task);
   } catch (error) {
     if (error instanceof z.ZodError) {
