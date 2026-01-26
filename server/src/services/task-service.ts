@@ -13,17 +13,29 @@ function makeSlug(text: string): string {
     .slice(0, 50);
 }
 
-const TASKS_DIR = path.join(process.cwd(), 'tasks', 'active');
-const ARCHIVE_DIR = path.join(process.cwd(), 'tasks', 'archive');
+// Default paths - resolve to project root (one level up from server/)
+const DEFAULT_PROJECT_ROOT = path.resolve(process.cwd(), '..');
+const DEFAULT_TASKS_DIR = path.join(DEFAULT_PROJECT_ROOT, 'tasks', 'active');
+const DEFAULT_ARCHIVE_DIR = path.join(DEFAULT_PROJECT_ROOT, 'tasks', 'archive');
+
+export interface TaskServiceOptions {
+  tasksDir?: string;
+  archiveDir?: string;
+}
 
 export class TaskService {
-  constructor() {
+  private tasksDir: string;
+  private archiveDir: string;
+
+  constructor(options: TaskServiceOptions = {}) {
+    this.tasksDir = options.tasksDir || DEFAULT_TASKS_DIR;
+    this.archiveDir = options.archiveDir || DEFAULT_ARCHIVE_DIR;
     this.ensureDirectories();
   }
 
   private async ensureDirectories(): Promise<void> {
-    await fs.mkdir(TASKS_DIR, { recursive: true });
-    await fs.mkdir(ARCHIVE_DIR, { recursive: true });
+    await fs.mkdir(this.tasksDir, { recursive: true });
+    await fs.mkdir(this.archiveDir, { recursive: true });
   }
 
   private generateId(): string {
@@ -37,7 +49,12 @@ export class TaskService {
   }
 
   private taskToMarkdown(task: Task): string {
-    const { description, reviewComments, ...frontmatter } = task;
+    const { description, reviewComments, ...rest } = task;
+    
+    // Filter out undefined values (gray-matter can't serialize them)
+    const frontmatter = Object.fromEntries(
+      Object.entries(rest).filter(([_, v]) => v !== undefined)
+    );
     
     const content = matter.stringify(description || '', frontmatter);
     
@@ -85,12 +102,12 @@ export class TaskService {
   async listTasks(): Promise<Task[]> {
     await this.ensureDirectories();
     
-    const files = await fs.readdir(TASKS_DIR);
+    const files = await fs.readdir(this.tasksDir);
     const mdFiles = files.filter(f => f.endsWith('.md'));
     
     const tasks = await Promise.all(
       mdFiles.map(async (filename) => {
-        const filepath = path.join(TASKS_DIR, filename);
+        const filepath = path.join(this.tasksDir, filename);
         const content = await fs.readFile(filepath, 'utf-8');
         return this.parseTaskFile(content, filename);
       })
@@ -124,7 +141,7 @@ export class TaskService {
     };
 
     const filename = this.taskToFilename(task);
-    const filepath = path.join(TASKS_DIR, filename);
+    const filepath = path.join(this.tasksDir, filename);
     const content = this.taskToMarkdown(task);
     
     await fs.writeFile(filepath, content, 'utf-8');
@@ -151,10 +168,10 @@ export class TaskService {
     const newFilename = this.taskToFilename(updatedTask);
     
     if (oldFilename !== newFilename) {
-      await fs.unlink(path.join(TASKS_DIR, oldFilename)).catch(() => {});
+      await fs.unlink(path.join(this.tasksDir, oldFilename)).catch(() => {});
     }
 
-    const filepath = path.join(TASKS_DIR, newFilename);
+    const filepath = path.join(this.tasksDir, newFilename);
     const content = this.taskToMarkdown(updatedTask);
     
     await fs.writeFile(filepath, content, 'utf-8');
@@ -167,7 +184,7 @@ export class TaskService {
     if (!task) return false;
 
     const filename = this.taskToFilename(task);
-    await fs.unlink(path.join(TASKS_DIR, filename));
+    await fs.unlink(path.join(this.tasksDir, filename));
     
     return true;
   }
@@ -177,8 +194,8 @@ export class TaskService {
     if (!task) return false;
 
     const filename = this.taskToFilename(task);
-    const sourcePath = path.join(TASKS_DIR, filename);
-    const destPath = path.join(ARCHIVE_DIR, filename);
+    const sourcePath = path.join(this.tasksDir, filename);
+    const destPath = path.join(this.archiveDir, filename);
     
     await fs.rename(sourcePath, destPath);
     
