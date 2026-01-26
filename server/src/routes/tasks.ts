@@ -122,10 +122,22 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const input = updateTaskSchema.parse(req.body) as UpdateTaskInput;
+    const oldTask = await taskService.getTask(req.params.id);
     const task = await taskService.updateTask(req.params.id, input);
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
+    
+    // Log activity for status changes
+    if (input.status && oldTask && oldTask.status !== input.status) {
+      await activityService.logActivity('status_changed', task.id, task.title, {
+        from: oldTask.status,
+        status: input.status,
+      });
+    } else if (oldTask) {
+      await activityService.logActivity('task_updated', task.id, task.title);
+    }
+    
     res.json(task);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -139,10 +151,17 @@ router.patch('/:id', async (req, res) => {
 // DELETE /api/tasks/:id - Delete task (move to archive)
 router.delete('/:id', async (req, res) => {
   try {
+    const task = await taskService.getTask(req.params.id);
     const success = await taskService.deleteTask(req.params.id);
     if (!success) {
       return res.status(404).json({ error: 'Task not found' });
     }
+    
+    // Log activity
+    if (task) {
+      await activityService.logActivity('task_deleted', task.id, task.title);
+    }
+    
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting task:', error);
@@ -153,10 +172,17 @@ router.delete('/:id', async (req, res) => {
 // POST /api/tasks/:id/archive - Archive task
 router.post('/:id/archive', async (req, res) => {
   try {
+    const task = await taskService.getTask(req.params.id);
     const success = await taskService.archiveTask(req.params.id);
     if (!success) {
       return res.status(404).json({ error: 'Task not found' });
     }
+    
+    // Log activity
+    if (task) {
+      await activityService.logActivity('task_archived', task.id, task.title);
+    }
+    
     res.json({ archived: true });
   } catch (error) {
     console.error('Error archiving task:', error);

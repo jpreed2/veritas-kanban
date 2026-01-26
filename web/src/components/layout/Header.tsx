@@ -1,13 +1,15 @@
-import { Plus, Settings, Keyboard } from 'lucide-react';
+import { Plus, Settings, Keyboard, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/task/CreateTaskDialog';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
+import { ActivitySidebar } from './ActivitySidebar';
 import { useState, useEffect } from 'react';
 import { useKeyboard } from '@/hooks/useKeyboard';
 
 export function Header() {
   const [createOpen, setCreateOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const { setOpenCreateDialog, openHelpDialog } = useKeyboard();
 
   // Register the create dialog opener with keyboard context
@@ -46,6 +48,14 @@ export function Header() {
             <Button 
               variant="ghost" 
               size="icon"
+              onClick={() => setActivityOpen(true)}
+              title="Activity log"
+            >
+              <Activity className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4" />
@@ -56,6 +66,7 @@ export function Header() {
       
       <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <ActivitySidebar open={activityOpen} onOpenChange={setActivityOpen} />
     </header>
   );
 }

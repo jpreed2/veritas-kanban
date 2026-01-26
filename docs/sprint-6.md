@@ -3,7 +3,7 @@
 **Goal:** Keyboard shortcuts, filtering, and UI polish.
 
 **Started:** 2026-01-26
-**Status:** In Progress
+**Status:** Complete ✅
 
 ---
 
@@ -15,7 +15,7 @@
 | US-602 | Filter and search | ✅ Complete | Project/type dropdowns, text search |
 | US-603 | Task templates | ✅ Complete | New from Template option |
 | US-604 | Bulk actions | ✅ Complete | Multi-select, bulk status/archive/delete |
-| US-605 | Activity log | ⏳ Todo | Toggleable sidebar |
+| US-605 | Activity log | ✅ Complete | Toggleable sidebar |
 
 ---
 
@@ -64,3 +64,16 @@
   - Delete selected (with confirmation)
 - Checkbox selection on task cards when in selection mode
 - Added useArchiveTask hook
+
+**US-605: Activity log** ✅
+- Created ActivityService for logging task events
+- Activity stored in `.veritas-kanban/activity.json`
+- API endpoints: GET/DELETE /api/activity
+- Activity logging on task create, update, status change, archive, delete
+- ActivitySidebar component with:
+  - Slide-out panel from right
+  - Filter by activity type
+  - Refresh and clear buttons
+  - Relative timestamps ("5m ago", "2h ago")
+- Activity button in header
+- Added ScrollArea UI component
