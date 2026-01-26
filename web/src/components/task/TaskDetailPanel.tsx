@@ -375,6 +375,10 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
                   onReview={(review: ReviewState) => {
                     updateField('review', Object.keys(review).length > 0 ? review : undefined);
                   }}
+                  onMergeComplete={() => {
+                    // Close the panel after successful merge
+                    onOpenChange(false);
+                  }}
                 />
               </TabsContent>
             )}

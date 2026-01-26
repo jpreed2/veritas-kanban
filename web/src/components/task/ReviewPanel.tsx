@@ -2,17 +2,32 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   CheckCircle,
   XCircle,
   RefreshCcw,
   MessageSquare,
+  GitMerge,
+  Loader2,
 } from 'lucide-react';
+import { useMergeWorktree } from '@/hooks/useWorktree';
 import type { Task, ReviewDecision, ReviewState } from '@veritas-kanban/shared';
 import { cn } from '@/lib/utils';
 
 interface ReviewPanelProps {
   task: Task;
   onReview: (review: ReviewState) => void;
+  onMergeComplete?: () => void;
 }
 
 const decisionStyles: Record<ReviewDecision, { icon: React.ReactNode; label: string; className: string }> = {
@@ -33,14 +48,16 @@ const decisionStyles: Record<ReviewDecision, { icon: React.ReactNode; label: str
   },
 };
 
-export function ReviewPanel({ task, onReview }: ReviewPanelProps) {
+export function ReviewPanel({ task, onReview, onMergeComplete }: ReviewPanelProps) {
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState('');
   const [pendingDecision, setPendingDecision] = useState<ReviewDecision | null>(null);
 
+  const mergeWorktree = useMergeWorktree();
   const hasWorktree = !!task.git?.worktreePath;
   const comments = task.reviewComments || [];
   const currentReview = task.review;
+  const isApproved = currentReview?.decision === 'approved';
 
   const handleDecision = (decision: ReviewDecision) => {
     if (decision === 'changes-requested' || decision === 'rejected') {
@@ -105,6 +122,52 @@ export function ReviewPanel({ task, onReview }: ReviewPanelProps) {
         <div className="p-3 rounded-md border bg-muted/50">
           <p className="text-sm whitespace-pre-wrap">{currentReview.summary}</p>
         </div>
+      )}
+
+      {/* Merge button when approved */}
+      {isApproved && hasWorktree && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="w-full bg-green-600 hover:bg-green-700" disabled={mergeWorktree.isPending}>
+              {mergeWorktree.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Merging...
+                </>
+              ) : (
+                <>
+                  <GitMerge className="h-4 w-4 mr-2" />
+                  Merge & Close Task
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Merge changes to {task.git?.baseBranch || 'main'}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will merge the branch <code className="px-1 bg-muted rounded">{task.git?.branch}</code> into{' '}
+                <code className="px-1 bg-muted rounded">{task.git?.baseBranch || 'main'}</code>,
+                delete the worktree, and mark this task as done.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  mergeWorktree.mutate(task.id, {
+                    onSuccess: () => {
+                      onMergeComplete?.();
+                    },
+                  });
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Merge & Close
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
       {/* Comment summary */}
