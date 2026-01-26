@@ -1,5 +1,12 @@
 [
   {
+    "id": "activity_1769449288760_hzmmgfxfi",
+    "type": "task_deleted",
+    "taskId": "task_20260126_9VIZY1",
+    "taskTitle": "Test task from CLI",
+    "timestamp": "2026-01-26T17:41:28.760Z"
+  },
+  {
     "id": "activity_1769449185820_cctph1fac",
     "type": "task_deleted",
     "taskId": "task_20260126_tsDVOq",

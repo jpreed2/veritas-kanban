@@ -1,33 +1,53 @@
 # Veritas Kanban
 
-A local-first task management and AI agent orchestration platform built for Brad Groux and Veritas.
+A local-first task management and AI agent orchestration platform. Built for developers who want a visual Kanban board that integrates with AI coding agents.
 
 ## Features
 
-- 📋 **Kanban Board** - Visual task management with drag-and-drop
-- 🤖 **AI Agent Orchestration** - Spawn Claude Code, Amp, Copilot, Gemini
-- 🌳 **Git Worktrees** - Isolated branches for each coding task
-- 📝 **Markdown Storage** - Human-readable task files with frontmatter
-- 🔍 **Code Review** - Diff viewing and inline comments
-- 🌙 **Dark Mode** - Easy on the eyes
-- 🖥️ **CLI** - `vk` command for terminal-based task management
-- 🔌 **MCP Server** - Model Context Protocol integration for AI assistants
+### Core
+- 📋 **Kanban Board** — Drag-and-drop task management across To Do, In Progress, Review, Done
+- 📝 **Markdown Storage** — Human-readable task files with YAML frontmatter
+- 🌙 **Dark Mode** — Easy on the eyes, always
+
+### Code Workflow
+- 🌳 **Git Worktrees** — Isolated branches per task, automatic cleanup
+- 🔍 **Code Review** — Unified diff viewer with inline comments
+- ✅ **Approval Workflow** — Approve, request changes, or reject
+- 🔀 **Merge Conflicts** — Visual conflict resolution UI
+- 🔗 **GitHub PRs** — Create PRs directly from task detail
+
+### AI Agents
+- 🤖 **Clawdbot Integration** — Spawns sub-agents via `sessions_spawn`
+- 🔄 **Multiple Attempts** — Retry with different agents, preserve history
+- 📊 **Running Indicator** — Visual feedback when agents are working
+
+### Organization
+- 📁 **Subtasks** — Break down complex work with progress tracking
+- 🔗 **Dependencies** — Block tasks until prerequisites complete
+- 📦 **Archive** — Searchable archive with one-click restore
+- ⏱️ **Time Tracking** — Start/stop timer or manual entry
+- 📋 **Activity Log** — Full history of task events
+
+### Integration
+- 🖥️ **CLI** — `vk` command for terminal workflows
+- 🔌 **MCP Server** — Model Context Protocol for AI assistants
+- 🔔 **Notifications** — Teams integration for task updates
 
 ## Quick Start
 
 ```bash
-# Clone the repo
+# Clone
 git clone https://github.com/dm-bradgroux/veritas-kanban.git
 cd veritas-kanban
 
-# Install dependencies
+# Install
 pnpm install
 
-# Start development
+# Run
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000
 
 ## Tech Stack
 
@@ -37,90 +57,80 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | Language | TypeScript (strict) |
 | Server | Express + WebSocket |
 | Frontend | React 19 + Vite + shadcn/ui |
-| Persistence | Markdown files (gray-matter) |
+| Storage | Markdown files (gray-matter) |
 | Git | simple-git |
 
 ## Project Structure
 
 ```
 veritas-kanban/
-├── .devcontainer/     # Dev container config
 ├── server/            # Express API + WebSocket
-├── web/               # React frontend
-├── shared/            # Shared TypeScript types
+├── web/               # React frontend  
+├── shared/            # TypeScript types
 ├── cli/               # vk CLI tool
 ├── mcp/               # MCP server for AI assistants
-├── tasks/             # Task storage (markdown files)
-│   ├── active/        # Current tasks
-│   └── archive/       # Completed tasks
-└── .veritas-kanban/   # Config and runtime data
+├── docs/              # Sprint documentation
+├── tasks/             # Task storage (markdown)
+│   ├── active/
+│   └── archive/
+└── .veritas-kanban/   # Config, logs, worktrees
+    ├── config.json
+    ├── worktrees/
+    ├── logs/
+    └── agent-requests/
 ```
 
-## CLI Usage
-
-The `vk` command provides terminal-based task management:
+## CLI
 
 ```bash
-# List all tasks
-vk list
-
-# List with filters
-vk list --status in-progress --project rubicon
-
-# Show task details
-vk show <task-id>
-
-# Create a task
-vk create "Implement feature X" --type code --project myproject
-
-# Update a task
-vk update <task-id> --status in-progress --priority high
-
-# Start an agent on a task
-vk start <task-id> --agent claude-code
-
-# Archive/delete
-vk archive <task-id>
-vk delete <task-id>
-
-# JSON output for scripting
-vk list --json | jq '.[] | select(.status == "review")'
-```
-
-### Install CLI Globally
-
-```bash
+# Install globally
 cd cli && npm link
+
+# Task management
+vk list                          # List all tasks
+vk list --status in-progress     # Filter by status
+vk show <id>                     # Task details
+vk create "Title" --type code    # Create task
+vk update <id> --status review   # Update task
+
+# Agent commands
+vk agents:pending                # List pending agent requests
+vk agents:status <id>            # Check if agent running
+vk agents:complete <id> -s       # Mark agent complete
+
+# Utilities  
+vk summary                       # Project stats
+vk notify:pending                # Check notifications
+```
+
+## Agent Integration
+
+Veritas Kanban integrates with [Clawdbot](https://github.com/clawdbot/clawdbot) for AI agent orchestration.
+
+### How It Works
+
+1. **Start Agent** — Click "Start Agent" in the UI on a code task
+2. **Request Created** — Server writes to `.veritas-kanban/agent-requests/`
+3. **Veritas Picks Up** — Tell Veritas "I started an agent on task X"
+4. **Sub-agent Spawns** — Clawdbot's `sessions_spawn` handles PTY and execution
+5. **Work Complete** — Agent commits changes and calls completion endpoint
+6. **Task Updates** — Status moves to Review, notifications sent
+
+### Manual Trigger
+
+```bash
+# Check for pending requests
+vk agents:pending
+
+# If you're Veritas, spawn the sub-agent and call:
+curl -X POST http://localhost:3001/api/agents/<task-id>/complete \
+  -H "Content-Type: application/json" \
+  -d '{"success": true, "summary": "What was done"}'
 ```
 
 ## MCP Server
 
-The MCP (Model Context Protocol) server allows AI assistants like Claude to manage tasks.
-
-### Tools Available
-
-| Tool | Description |
-|------|-------------|
-| `list_tasks` | List tasks with optional filters |
-| `get_task` | Get task details by ID |
-| `create_task` | Create a new task |
-| `update_task` | Update task fields |
-| `start_agent` | Start an agent on a code task |
-| `stop_agent` | Stop a running agent |
-| `archive_task` | Archive a completed task |
-| `delete_task` | Delete a task |
-
-### Resources Available
-
-| URI | Description |
-|-----|-------------|
-| `kanban://tasks` | All tasks |
-| `kanban://tasks/active` | In-progress and review tasks |
-| `kanban://task/{id}` | Specific task details |
-
-### Configure in Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+For AI assistants (Claude Desktop, etc.):
 
 ```json
 {
@@ -136,34 +146,27 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-## Repositories
+### Available Tools
 
-- **Work**: https://github.com/dm-bradgroux/veritas-kanban
-- **Personal**: https://github.com/BradGroux/veritas-kanban
+| Tool | Description |
+|------|-------------|
+| `list_tasks` | List with filters |
+| `get_task` | Get task by ID |
+| `create_task` | Create new task |
+| `update_task` | Update fields |
+| `archive_task` | Archive task |
 
-## Development
+### Resources
 
-### Prerequisites
+| URI | Description |
+|-----|-------------|
+| `kanban://tasks` | All tasks |
+| `kanban://tasks/active` | In-progress + review |
+| `kanban://task/{id}` | Single task |
 
-- Node.js 22+
-- pnpm 9+
+## Task Format
 
-### Commands
-
-```bash
-pnpm dev        # Start dev server (frontend + backend)
-pnpm build      # Build for production
-pnpm typecheck  # Run TypeScript checks
-pnpm lint       # Run ESLint
-```
-
-### Dev Container
-
-This project includes a VS Code Dev Container configuration. Open in VS Code and select "Reopen in Container" for a consistent development environment.
-
-## Task File Format
-
-Tasks are stored as markdown files with YAML frontmatter:
+Tasks are markdown files with YAML frontmatter:
 
 ```markdown
 ---
@@ -173,12 +176,29 @@ type: "code"
 status: "in-progress"
 priority: "high"
 project: "rubicon"
+git:
+  repo: "my-project"
+  branch: "feature/task_abc123"
+  baseBranch: "main"
 ---
 
 ## Description
 
-Details about the task...
+Task details here...
 ```
+
+## Development
+
+```bash
+pnpm dev        # Start dev servers
+pnpm build      # Production build
+pnpm typecheck  # TypeScript check
+```
+
+## Repositories
+
+- **Work**: https://github.com/dm-bradgroux/veritas-kanban
+- **Personal**: https://github.com/BradGroux/veritas-kanban
 
 ## License
 
