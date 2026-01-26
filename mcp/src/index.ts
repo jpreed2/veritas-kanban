@@ -1,0 +1,588 @@
+#!/usr/bin/env node
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
+
+const API_BASE = process.env.VK_API_URL || 'http://localhost:3001';
+
+// Task type definition
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  type: 'code' | 'research' | 'content' | 'automation';
+  status: 'todo' | 'in-progress' | 'review' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  project?: string;
+  tags?: string[];
+  created: string;
+  updated: string;
+  git?: {
+    repo: string;
+    branch: string;
+    baseBranch: string;
+    worktreePath?: string;
+  };
+  attempt?: {
+    id: string;
+    agent: string;
+    status: string;
+    started?: string;
+    ended?: string;
+  };
+  review?: {
+    decision?: string;
+    decidedAt?: string;
+    summary?: string;
+  };
+}
+
+// API helper
+async function api<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(error.error || `API error: ${res.status}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+// Tool input schemas
+const ListTasksSchema = z.object({
+  status: z.enum(['todo', 'in-progress', 'review', 'done']).optional(),
+  type: z.enum(['code', 'research', 'content', 'automation']).optional(),
+  project: z.string().optional(),
+});
+
+const CreateTaskSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  type: z.enum(['code', 'research', 'content', 'automation']).default('code'),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  project: z.string().optional(),
+});
+
+const UpdateTaskSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(['todo', 'in-progress', 'review', 'done']).optional(),
+  type: z.enum(['code', 'research', 'content', 'automation']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  project: z.string().optional(),
+});
+
+const TaskIdSchema = z.object({
+  id: z.string().min(1),
+});
+
+const StartAgentSchema = z.object({
+  id: z.string().min(1),
+  agent: z.enum(['claude-code', 'amp', 'copilot', 'gemini']).default('claude-code'),
+});
+
+// Create MCP server
+const server = new Server(
+  {
+    name: 'veritas-kanban',
+    version: '0.1.0',
+  },
+  {
+    capabilities: {
+      tools: {},
+      resources: {},
+    },
+  }
+);
+
+// Find task by ID (supports partial matching)
+async function findTask(id: string): Promise<Task | null> {
+  const tasks = await api<Task[]>('/api/tasks');
+  return tasks.find(t => t.id === id || t.id.endsWith(id)) || null;
+}
+
+// List available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: 'list_tasks',
+        description: 'List all tasks in Veritas Kanban. Can filter by status, type, or project.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['todo', 'in-progress', 'review', 'done'],
+              description: 'Filter by task status',
+            },
+            type: {
+              type: 'string',
+              enum: ['code', 'research', 'content', 'automation'],
+              description: 'Filter by task type',
+            },
+            project: {
+              type: 'string',
+              description: 'Filter by project name',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_task',
+        description: 'Get details of a specific task by ID (supports partial ID matching)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID (last 6+ characters)',
+            },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'create_task',
+        description: 'Create a new task in Veritas Kanban',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Task title',
+            },
+            description: {
+              type: 'string',
+              description: 'Task description',
+            },
+            type: {
+              type: 'string',
+              enum: ['code', 'research', 'content', 'automation'],
+              description: 'Task type (default: code)',
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'Task priority (default: medium)',
+            },
+            project: {
+              type: 'string',
+              description: 'Project name',
+            },
+          },
+          required: ['title'],
+        },
+      },
+      {
+        name: 'update_task',
+        description: 'Update an existing task',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID',
+            },
+            title: {
+              type: 'string',
+              description: 'New title',
+            },
+            description: {
+              type: 'string',
+              description: 'New description',
+            },
+            status: {
+              type: 'string',
+              enum: ['todo', 'in-progress', 'review', 'done'],
+              description: 'New status',
+            },
+            type: {
+              type: 'string',
+              enum: ['code', 'research', 'content', 'automation'],
+              description: 'New type',
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'New priority',
+            },
+            project: {
+              type: 'string',
+              description: 'New project',
+            },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'start_agent',
+        description: 'Start an AI coding agent on a code task (requires worktree)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID',
+            },
+            agent: {
+              type: 'string',
+              enum: ['claude-code', 'amp', 'copilot', 'gemini'],
+              description: 'Agent to use (default: claude-code)',
+            },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'stop_agent',
+        description: 'Stop a running agent on a task',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID',
+            },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'archive_task',
+        description: 'Archive a completed task',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID',
+            },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'delete_task',
+        description: 'Delete a task permanently',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Task ID or partial ID',
+            },
+          },
+          required: ['id'],
+        },
+      },
+    ],
+  };
+});
+
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  try {
+    switch (name) {
+      case 'list_tasks': {
+        const params = ListTasksSchema.parse(args || {});
+        let tasks = await api<Task[]>('/api/tasks');
+
+        if (params.status) {
+          tasks = tasks.filter(t => t.status === params.status);
+        }
+        if (params.type) {
+          tasks = tasks.filter(t => t.type === params.type);
+        }
+        if (params.project) {
+          tasks = tasks.filter(t => t.project === params.project);
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tasks, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_task': {
+        const { id } = TaskIdSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(task, null, 2) }],
+        };
+      }
+
+      case 'create_task': {
+        const params = CreateTaskSchema.parse(args);
+        const task = await api<Task>('/api/tasks', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Task created: ${task.id}\n${JSON.stringify(task, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'update_task': {
+        const { id, ...updates } = UpdateTaskSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        const updated = await api<Task>(`/api/tasks/${task.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updates),
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Task updated: ${updated.id}\n${JSON.stringify(updated, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'start_agent': {
+        const { id, agent } = StartAgentSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        if (task.type !== 'code') {
+          return {
+            content: [{ type: 'text', text: 'Can only start agents on code tasks' }],
+            isError: true,
+          };
+        }
+
+        if (!task.git?.worktreePath) {
+          return {
+            content: [{ type: 'text', text: 'Task needs a worktree first' }],
+            isError: true,
+          };
+        }
+
+        const result = await api<{ attemptId: string }>(`/api/agents/${task.id}/start`, {
+          method: 'POST',
+          body: JSON.stringify({ agent }),
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Agent started: ${agent}\nAttempt ID: ${result.attemptId}\nWorking in: ${task.git.worktreePath}`,
+            },
+          ],
+        };
+      }
+
+      case 'stop_agent': {
+        const { id } = TaskIdSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        await api(`/api/agents/${task.id}/stop`, { method: 'POST' });
+
+        return {
+          content: [{ type: 'text', text: 'Agent stopped' }],
+        };
+      }
+
+      case 'archive_task': {
+        const { id } = TaskIdSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        await api(`/api/tasks/${task.id}/archive`, { method: 'POST' });
+
+        return {
+          content: [{ type: 'text', text: `Task archived: ${task.id}` }],
+        };
+      }
+
+      case 'delete_task': {
+        const { id } = TaskIdSchema.parse(args);
+        const task = await findTask(id);
+
+        if (!task) {
+          return {
+            content: [{ type: 'text', text: `Task not found: ${id}` }],
+            isError: true,
+          };
+        }
+
+        await api(`/api/tasks/${task.id}`, { method: 'DELETE' });
+
+        return {
+          content: [{ type: 'text', text: `Task deleted: ${task.id}` }],
+        };
+      }
+
+      default:
+        return {
+          content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+          isError: true,
+        };
+    }
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+});
+
+// List available resources
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  const tasks = await api<Task[]>('/api/tasks');
+
+  return {
+    resources: [
+      {
+        uri: 'kanban://tasks',
+        name: 'All Tasks',
+        description: 'List of all tasks in Veritas Kanban',
+        mimeType: 'application/json',
+      },
+      {
+        uri: 'kanban://tasks/active',
+        name: 'Active Tasks',
+        description: 'Tasks that are in-progress or in review',
+        mimeType: 'application/json',
+      },
+      ...tasks.map(task => ({
+        uri: `kanban://task/${task.id}`,
+        name: task.title,
+        description: `${task.type} task - ${task.status} - ${task.project || 'no project'}`,
+        mimeType: 'application/json',
+      })),
+    ],
+  };
+});
+
+// Read resource content
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  if (uri === 'kanban://tasks') {
+    const tasks = await api<Task[]>('/api/tasks');
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: 'application/json',
+          text: JSON.stringify(tasks, null, 2),
+        },
+      ],
+    };
+  }
+
+  if (uri === 'kanban://tasks/active') {
+    const tasks = await api<Task[]>('/api/tasks');
+    const active = tasks.filter(t => t.status === 'in-progress' || t.status === 'review');
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: 'application/json',
+          text: JSON.stringify(active, null, 2),
+        },
+      ],
+    };
+  }
+
+  if (uri.startsWith('kanban://task/')) {
+    const id = uri.replace('kanban://task/', '');
+    const task = await findTask(id);
+
+    if (!task) {
+      throw new Error(`Task not found: ${id}`);
+    }
+
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: 'application/json',
+          text: JSON.stringify(task, null, 2),
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Unknown resource: ${uri}`);
+});
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('Veritas Kanban MCP server running on stdio');
+}
+
+main().catch(console.error);
