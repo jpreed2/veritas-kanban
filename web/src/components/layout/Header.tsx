@@ -1,8 +1,9 @@
-import { Plus, Settings, Keyboard, Activity } from 'lucide-react';
+import { Plus, Settings, Keyboard, Activity, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/task/CreateTaskDialog';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { ActivitySidebar } from './ActivitySidebar';
+import { ArchiveSidebar } from './ArchiveSidebar';
 import { useState } from 'react';
 import { useKeyboard } from '@/hooks/useKeyboard';
 
@@ -10,6 +11,7 @@ export function Header() {
   const [createOpen, setCreateOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const { setOpenCreateDialog, openHelpDialog } = useKeyboard();
 
   // Register the create dialog opener with keyboard context (ref, no useEffect needed)
@@ -54,6 +56,14 @@ export function Header() {
             <Button 
               variant="ghost" 
               size="icon"
+              onClick={() => setArchiveOpen(true)}
+              title="Archive"
+            >
+              <Archive className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4" />
@@ -65,6 +75,7 @@ export function Header() {
       <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <ActivitySidebar open={activityOpen} onOpenChange={setActivityOpen} />
+      <ArchiveSidebar open={archiveOpen} onOpenChange={setArchiveOpen} />
     </header>
   );
 }

@@ -57,6 +57,11 @@ export const api = {
       return handleResponse<Task[]>(response);
     },
 
+    listArchived: async (): Promise<Task[]> => {
+      const response = await fetch(`${API_BASE}/tasks/archived`);
+      return handleResponse<Task[]>(response);
+    },
+
     get: async (id: string): Promise<Task> => {
       const response = await fetch(`${API_BASE}/tasks/${id}`);
       return handleResponse<Task>(response);

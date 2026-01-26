@@ -103,15 +103,10 @@ export class AgentService {
     // Spawn agent process
     const worktreePath = this.expandPath(task.git.worktreePath);
     const args = [...agentConfig.args];
-    
-    // Add prompt for certain agents
-    if (agent === 'claude-code' || agent === 'amp') {
-      args.push(prompt);
-    }
 
     const childProcess = spawn(agentConfig.command, args, {
       cwd: worktreePath,
-      shell: true,
+      shell: false,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
@@ -119,6 +114,17 @@ export class AgentService {
         TERM: 'xterm-256color',
       },
     });
+    
+    // Debug: check if streams exist
+    console.log(`[Agent ${attemptId}] stdout: ${!!childProcess.stdout}, stderr: ${!!childProcess.stderr}, stdin: ${!!childProcess.stdin}`);
+    
+    // Send prompt via stdin for agents that expect it (claude-code, amp)
+    if (agent === 'claude-code' || agent === 'amp') {
+      console.log(`[Agent ${attemptId}] Sending prompt via stdin (${prompt.length} chars)`);
+      childProcess.stdin?.write(prompt);
+      childProcess.stdin?.end();
+      console.log(`[Agent ${attemptId}] stdin closed`);
+    }
 
     // Store in running agents
     runningAgents.set(taskId, {
@@ -136,6 +142,7 @@ export class AgentService {
     // Handle stdout
     childProcess.stdout?.on('data', async (data: Buffer) => {
       const content = data.toString();
+      console.log(`[Agent ${attemptId}] stdout:`, content.slice(0, 100));
       const output: AgentOutput = {
         type: 'stdout',
         content,
@@ -148,6 +155,7 @@ export class AgentService {
     // Handle stderr
     childProcess.stderr?.on('data', async (data: Buffer) => {
       const content = data.toString();
+      console.log(`[Agent ${attemptId}] stderr:`, content.slice(0, 100));
       const output: AgentOutput = {
         type: 'stderr',
         content,

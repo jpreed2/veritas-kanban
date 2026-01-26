@@ -9,6 +9,13 @@ export function useTasks() {
   });
 }
 
+export function useArchivedTasks() {
+  return useQuery({
+    queryKey: ['tasks', 'archived'],
+    queryFn: api.tasks.listArchived,
+  });
+}
+
 export function useTask(id: string) {
   return useQuery({
     queryKey: ['tasks', id],

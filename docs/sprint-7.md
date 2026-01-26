@@ -11,7 +11,7 @@
 
 | ID | Title | Status | Dependencies | Notes |
 |----|-------|--------|--------------|-------|
-| US-701 | Archive sidebar | ⏳ Todo | None | Slide-out viewer with search/filter for archived tasks |
+| US-701 | Archive sidebar | ✅ Done | None | Slide-out viewer with search/filter for archived tasks |
 | US-702 | Restore from archive | ⏳ Todo | US-701 | Unarchive tasks back to board |
 | US-703 | Subtasks | ⏳ Todo | None | Nested tasks with parent completion logic |
 | US-704 | Task dependencies | ⏳ Todo | US-703 | Block tasks until dependencies complete |
@@ -21,6 +21,7 @@
 | US-708 | Preview mode | ⏳ Todo | None | Embedded browser for dev server preview |
 | US-709 | Merge conflict resolution | ⏳ Todo | None | Visual conflict resolver UI |
 | US-710 | Time tracking | ⏳ Todo | None | Start/stop timer, manual entry, reports |
+| US-711 | Running indicator on cards | ⏳ Todo | None | Spinner/pulse animation when agent running |
 
 ---
 
@@ -89,6 +90,11 @@
 - Time displayed on task card
 - Time summary per project
 - Export time report
+
+### US-711: Running indicator on task cards
+- Visual indicator (spinner or pulse) on task card
+- Shows when agent is actively running
+- Easy to spot active work at a glance from board view
 
 ---
 

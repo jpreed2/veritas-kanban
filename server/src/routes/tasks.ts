@@ -81,6 +81,17 @@ router.get('/', async (_req, res) => {
   }
 });
 
+// GET /api/tasks/archived - List archived tasks
+router.get('/archived', async (_req, res) => {
+  try {
+    const tasks = await taskService.listArchivedTasks();
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error listing archived tasks:', error);
+    res.status(500).json({ error: 'Failed to list archived tasks' });
+  }
+});
+
 // GET /api/tasks/:id - Get single task
 router.get('/:id', async (req, res) => {
   try {

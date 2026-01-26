@@ -203,4 +203,29 @@ export class TaskService {
     
     return true;
   }
+
+  async listArchivedTasks(): Promise<Task[]> {
+    await this.ensureDirectories();
+    
+    const files = await fs.readdir(this.archiveDir);
+    const mdFiles = files.filter(f => f.endsWith('.md'));
+    
+    const tasks = await Promise.all(
+      mdFiles.map(async (filename) => {
+        const filepath = path.join(this.archiveDir, filename);
+        const content = await fs.readFile(filepath, 'utf-8');
+        return this.parseTaskFile(content, filename);
+      })
+    );
+
+    // Sort by updated date, newest first
+    return tasks.sort((a: Task, b: Task) => 
+      new Date(b.updated).getTime() - new Date(a.updated).getTime()
+    );
+  }
+
+  async getArchivedTask(id: string): Promise<Task | null> {
+    const tasks = await this.listArchivedTasks();
+    return tasks.find(t => t.id === id) || null;
+  }
 }
