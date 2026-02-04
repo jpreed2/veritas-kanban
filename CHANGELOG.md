@@ -121,6 +121,26 @@ Complete SOP Sprint with 8 new markdown files in `docs/`:
 - **scripts/dev-clean.sh** — Added explicit `pnpm` path resolution for launchd sessions (fixes "command not found" in automated restarts)
 - **scripts/dev-watchdog.sh** — Improved restart storm prevention with lock file + PID checking; fixed pnpm path resolution
 
+### CLI
+
+- **`vk setup`** — New guided onboarding wizard that validates environment and helps new users get started:
+  - Checks Node version (requires ≥18)
+  - Verifies server is running and reachable
+  - Tests API authentication
+  - Optionally creates a welcome task with next steps
+  - Supports `--json` output for automation and `--skip-task` to skip sample task
+  - Credit: BoardKit Orchestrator (Monika Voutov) for the wizard pattern inspiration
+
+### Fixed
+
+- **Archive/Delete/Restore** — Fixed "Archive failed" errors caused by filename mismatch when task titles changed after creation. Now uses `findTaskFile()` to locate actual file on disk by task ID prefix instead of computing filename from current title
+- **Sidebar Task Counts** — Fixed metrics showing time-filtered counts (e.g., 33 todo) instead of current board state (e.g., 124 todo). `/api/metrics/all` now returns current task status counts regardless of period filter; period only applies to telemetry metrics (runs, tokens, duration)
+- **Backlog Count API** — Fixed double-wrapped response (`{data: {success, data: {count}}}`) by letting `responseEnvelopeMiddleware` handle wrapping
+
+### Security
+
+- **SEC-001 Extended** — Added path traversal validation to `trace-service.ts` (attemptId, taskId, traceId) and `template-service.ts` (templateId) using `validatePathSegment()` + `ensureWithinBase()`
+
 ### Changed
 
 - Version bumped from 1.4.1 → 1.5.0

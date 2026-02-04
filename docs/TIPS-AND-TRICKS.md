@@ -1,4 +1,4 @@
-# Tips & Tricks — Power User Features
+# Tips & Tricks - Power User Features
 
 Little things that keep Veritas Kanban fast when you live in it all day.
 
@@ -8,11 +8,12 @@ Little things that keep Veritas Kanban fast when you live in it all day.
 
 | Command                     | What it does                                                     |
 | --------------------------- | ---------------------------------------------------------------- |
+| `vk setup`                  | Guided environment check + optional sample task creation.        |
 | `vk begin <id>`             | Sets status → in-progress, starts timer, agent status → working. |
 | `vk done <id> "summary"`    | Stops timer, sets done, posts summary, agent status → idle.      |
 | `vk block <id> "reason"`    | Blocks task + leaves blocker comment.                            |
 | `vk unblock <id>`           | Restarts timer and sets in-progress.                             |
-| `vk time`                   | Shows today’s breakdown (per task + total).                      |
+| `vk time`                   | Shows today's breakdown (per task + total).                      |
 | `vk summary standup --text` | Generates markdown standup summary.                              |
 
 Pipe outputs to `jq` or `fzf` for custom dashboards.
@@ -28,7 +29,7 @@ Pipe outputs to `jq` or `fzf` for custom dashboards.
 | `Esc`              | Close modals/panels quickly.                    |
 | `/`                | Focus global search (from palette).             |
 
-> Command palette replaces the old shortcuts dialog — type to filter actions, tasks, or navigation targets.
+> Command palette replaces the old shortcuts dialog - type to filter actions, tasks, or navigation targets.
 
 ---
 
@@ -36,7 +37,7 @@ Pipe outputs to `jq` or `fzf` for custom dashboards.
 
 - Type `create` to spawn new tasks anywhere.
 - Type `filter` to jump between saved filters (Today, Blocked, etc.).
-- Use `>` to execute actions (“>start timer task_123”).
+- Use `>` to execute actions (">start timer task_123").
 
 ---
 
@@ -70,8 +71,8 @@ Combine MCP + prompt registry to let Claude act as your PM.
 
 ## Git Worktree Integration
 
-- Start a worktree from any task via the UI (“Create worktree”).
-- Branch naming follows `tasks/task_<id>` pattern — align commit messages with `[author: model]` tags.
+- Start a worktree from any task via the UI ("Create worktree").
+- Branch naming follows `tasks/task_<id>` pattern - align commit messages with `[author: model]` tags.
 - Use `scripts/git-sync.sh` (if configured) to push to multiple remotes.
 
 ---

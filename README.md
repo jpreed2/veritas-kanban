@@ -299,6 +299,16 @@ Manage your entire task lifecycle with two commands.
 cd cli && npm link
 ```
 
+### Setup & Onboarding (NEW — v1.5)
+
+```bash
+vk setup                         # Guided environment check + sample task
+vk setup --skip-task             # Check only, no sample task
+vk setup --json                  # Machine-readable output
+```
+
+Validates Node version, server health, API auth, and optionally creates a welcome task to get you started.
+
 ### Workflow Commands (NEW — v1.4)
 
 The `vk begin` and `vk done` commands replace multi-step API workflows with single commands. Inspired by Boris Cherny's (Claude Code creator) philosophy: _"automate everything you do twice."_
