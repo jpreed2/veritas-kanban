@@ -169,8 +169,10 @@ export async function computeAllMetrics(
     }
   }
 
-  // Get task metrics — filtered by period like everything else
-  const tasks = await computeTaskMetrics(taskService, project, since);
+  // Get task metrics — always current state (not filtered by period).
+  // Task status counts represent the current board state, not historical activity.
+  // The period filter applies to telemetry events (runs, tokens, duration).
+  const tasks = await computeTaskMetrics(taskService, project, null);
 
   // Build run metrics
   const totalRuns = runAcc.successes + runAcc.failures + runAcc.errors;

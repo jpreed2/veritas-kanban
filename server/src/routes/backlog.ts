@@ -82,7 +82,8 @@ router.get(
   '/count',
   asyncHandler(async (_req, res) => {
     const count = await backlogService.getBacklogCount();
-    res.json({ success: true, data: { count } });
+    // Let responseEnvelopeMiddleware handle wrapping
+    res.json({ count });
   })
 );
 
