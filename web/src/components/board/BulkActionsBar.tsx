@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Trash2, Archive, ArrowRight, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { useToast } from '@/hooks/useToast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +53,7 @@ interface BulkActionsBarProps {
 export function BulkActionsBar({ tasks }: BulkActionsBarProps) {
   const { selectedIds, isSelecting, toggleSelecting, selectAll, toggleGroup, clearSelection } =
     useBulkActions();
+  const { toast } = useToast();
 
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -123,8 +125,43 @@ export function BulkActionsBar({ tasks }: BulkActionsBarProps) {
 
   const handleArchiveSelected = async () => {
     setIsProcessing(true);
+    const taskIds = Array.from(selectedIds);
+    let successful = 0;
+    let failed = 0;
+
     try {
-      await Promise.all(Array.from(selectedIds).map((id) => archiveTask.mutateAsync(id)));
+      // Archive each task individually to track success/failure
+      for (const id of taskIds) {
+        try {
+          await archiveTask.mutateAsync(id);
+          successful++;
+        } catch (error) {
+          failed++;
+          console.error(`Failed to archive task ${id}:`, error);
+        }
+      }
+
+      // Show appropriate feedback
+      if (failed > 0 && successful > 0) {
+        toast({
+          variant: 'default',
+          title: 'Partial Archive',
+          description: `Archived ${successful} of ${taskIds.length} tasks. ${failed} failed.`,
+        });
+      } else if (failed > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Archive Failed',
+          description: `Failed to archive all ${taskIds.length} selected tasks.`,
+        });
+      } else if (successful > 0) {
+        toast({
+          variant: 'default',
+          title: 'Success',
+          description: `Archived ${successful} task${successful !== 1 ? 's' : ''}.`,
+        });
+      }
+
       clearSelection();
     } finally {
       setIsProcessing(false);

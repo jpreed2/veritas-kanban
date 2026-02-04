@@ -59,6 +59,17 @@ Open [http://localhost:3000](http://localhost:3000) — that's it. The board aut
 
 ---
 
+## 📚 Documentation Map
+
+- [Getting Started Guide](docs/GETTING-STARTED.md) — zero ➝ agent-ready in 5 minutes, plus sanity checks and prompt registry tips.
+- [Agent Task Workflow SOP](docs/SOP-agent-task-workflow.md) — lifecycle, API/CLI snippets, prompts.
+- [Sprint Planning SOP](docs/SOP-sprint-planning.md) — epic → sprint → task breakdown.
+- [Multi-Agent Orchestration](docs/SOP-multi-agent-orchestration.md) — PM + worker handoffs.
+- [Cross-Model Code Review](docs/SOP-cross-model-code-review.md) — enforce Claude ↔ GPT reviews.
+- [Best Practices](docs/BEST-PRACTICES.md) & [Tips + Tricks](docs/TIPS-AND-TRICKS.md) — patterns, shortcuts, integrations.
+- [Real-World Examples](docs/EXAMPLES-agent-workflows.md) — copy/pasteable agent recipes.
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — deeper diagnostics when things wobble.
+
 ## ⚠️ Agentic AI Safety
 
 > [!CAUTION]

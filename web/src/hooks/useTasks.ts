@@ -114,13 +114,21 @@ export function useUpdateTask() {
 
       const cachedTask = queryClient.getQueryData<Task>(['tasks', serverTask.id]);
       queryClient.setQueryData(['tasks', serverTask.id], mergeWithCachedTimeTracking(cachedTask));
+
+      // GH-87: Invalidate metrics cache if status changed to keep sidebar in sync.
+      // The sidebar relies on useMetrics() which has a 30s refetch interval + 10s staleTime.
+      // Without this, sidebar counts can lag behind the actual board state.
+      if (input.status) {
+        queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      }
     },
-    // NOTE: No onSettled invalidation here. The onSuccess handler already
+    // NOTE: No general onSettled invalidation here. The onSuccess handler already
     // patches the cache with the server response (preserving timer state).
     // An aggressive invalidateQueries would trigger a background refetch
     // whose response could overwrite timer state that was patched between
     // the mutation start and the refetch completing. The WebSocket
     // task:changed events and polling handle eventual consistency.
+    // Status-specific metrics invalidation is handled above (GH-87).
   });
 }
 

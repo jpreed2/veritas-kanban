@@ -10,6 +10,16 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# launchd sessions often have a minimal PATH; resolve pnpm explicitly.
+PNPM_BIN="$(command -v pnpm || true)"
+if [[ -z "${PNPM_BIN}" && -x "/opt/homebrew/bin/pnpm" ]]; then
+  PNPM_BIN="/opt/homebrew/bin/pnpm"
+fi
+if [[ -z "${PNPM_BIN}" ]]; then
+  echo "[dev-clean] ERROR: pnpm not found in PATH and /opt/homebrew/bin/pnpm missing" >&2
+  exit 1
+fi
+
 SERVER_PORT="${PORT:-3001}"
 WEB_PORT="${WEB_PORT:-3000}"
 
@@ -73,4 +83,4 @@ sleep 0.5
 
 echo "[dev-clean] starting pnpm dev"
 cd "${REPO_ROOT}"
-exec pnpm dev
+exec "${PNPM_BIN}" dev
