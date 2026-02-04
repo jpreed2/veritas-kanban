@@ -8,6 +8,7 @@ import type {
   UpdateTemplateInput,
 } from '@veritas-kanban/shared';
 import { createLogger } from '../lib/logger.js';
+import { validatePathSegment, ensureWithinBase } from '../utils/sanitize.js';
 const log = createLogger('template-service');
 
 export class TemplateService {
@@ -30,7 +31,10 @@ export class TemplateService {
   }
 
   private templatePath(id: string): string {
-    return join(this.templatesDir, `${id}.md`);
+    validatePathSegment(id);
+    const filepath = join(this.templatesDir, `${id}.md`);
+    ensureWithinBase(this.templatesDir, filepath);
+    return filepath;
   }
 
   /**

@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import type { AgentType } from '@veritas-kanban/shared';
 import { getTelemetryService } from './telemetry-service.js';
+import { validatePathSegment, ensureWithinBase } from '../utils/sanitize.js';
 
 const PROJECT_ROOT = path.resolve(process.cwd(), '..');
 const TRACES_DIR = path.join(PROJECT_ROOT, '.veritas-kanban', 'traces');
@@ -174,6 +175,9 @@ export class TraceService {
    * Get a completed trace from disk
    */
   async getTrace(attemptId: string): Promise<Trace | null> {
+    // Validate attemptId to prevent path traversal
+    validatePathSegment(attemptId);
+
     // Check active traces first
     const active = activeTraces.get(attemptId);
     if (active) return active;
@@ -181,6 +185,7 @@ export class TraceService {
     // Try to load from disk
     try {
       const filepath = path.join(this.tracesDir, `${attemptId}.json`);
+      ensureWithinBase(this.tracesDir, filepath);
       const content = await fs.readFile(filepath, 'utf-8');
       return JSON.parse(content) as Trace;
     } catch {
@@ -193,6 +198,9 @@ export class TraceService {
    * List all traces for a task
    */
   async listTraces(taskId: string): Promise<Trace[]> {
+    // Validate taskId (used for filtering, not path construction, but good practice)
+    validatePathSegment(taskId);
+
     const traces: Trace[] = [];
 
     // Add active traces for this task
@@ -230,8 +238,12 @@ export class TraceService {
    * Save a trace to disk
    */
   private async saveTrace(trace: Trace): Promise<void> {
+    // Validate traceId to prevent path traversal
+    validatePathSegment(trace.traceId);
+
     await fs.mkdir(this.tracesDir, { recursive: true });
     const filepath = path.join(this.tracesDir, `${trace.traceId}.json`);
+    ensureWithinBase(this.tracesDir, filepath);
     await fs.writeFile(filepath, JSON.stringify(trace, null, 2), 'utf-8');
   }
 }
