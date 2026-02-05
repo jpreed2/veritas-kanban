@@ -593,23 +593,30 @@ function StatusHistoryPanel({ onTaskClick }: StatusHistoryPanelProps) {
                   <StatusBadge status={entry.previousStatus} />
                   <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
                   <StatusBadge status={entry.newStatus} />
-                  <span
-                    className={cn(
-                      'text-sm truncate flex-1',
-                      entry.taskId && onTaskClick && 'hover:underline',
-                      // Color based on newStatus
-                      entry.newStatus === 'working' || entry.newStatus === 'thinking'
-                        ? 'text-green-500'
-                        : entry.newStatus === 'sub-agent'
-                          ? 'text-blue-500'
-                          : entry.newStatus === 'error'
-                            ? 'text-red-500'
-                            : 'text-gray-500'
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className={cn(
+                        'text-sm truncate block',
+                        entry.taskId && onTaskClick && 'hover:underline',
+                        // Color based on newStatus
+                        entry.newStatus === 'working' || entry.newStatus === 'thinking'
+                          ? 'text-green-500'
+                          : entry.newStatus === 'sub-agent'
+                            ? 'text-blue-500'
+                            : entry.newStatus === 'error'
+                              ? 'text-red-500'
+                              : 'text-gray-500'
+                      )}
+                      title={entry.taskTitle || 'No task'}
+                    >
+                      {entry.taskTitle || '—'}
+                    </span>
+                    {entry.taskId && (
+                      <span className="text-xs text-muted-foreground/60 font-mono truncate block">
+                        {entry.taskId}
+                      </span>
                     )}
-                    title={entry.taskTitle || 'No task'}
-                  >
-                    {entry.taskTitle || '—'}
-                  </span>
+                  </div>
                   {entry.durationMs && (
                     <span className="text-xs text-muted-foreground ml-auto shrink-0">
                       {formatDurationMs(entry.durationMs)}
