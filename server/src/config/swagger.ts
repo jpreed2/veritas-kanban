@@ -226,6 +226,132 @@ const options: swaggerJsdoc.Options = {
             code: { type: 'string' },
           },
         },
+        TaskTimeline: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+            project: { type: 'string' },
+            sprint: { type: 'string' },
+            agent: { type: 'string' },
+            status: { type: 'string' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time' },
+            durationSeconds: { type: 'number' },
+            timeEntries: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  startTime: { type: 'string', format: 'date-time' },
+                  endTime: { type: 'string', format: 'date-time' },
+                  duration: { type: 'number' },
+                  description: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        ParallelismSnapshot: {
+          type: 'object',
+          properties: {
+            timestamp: { type: 'string', format: 'date-time' },
+            concurrentTaskCount: { type: 'number' },
+            taskIds: { type: 'array', items: { type: 'string' } },
+          },
+        },
+        TimelineResponse: {
+          type: 'object',
+          properties: {
+            period: {
+              type: 'object',
+              properties: {
+                from: { type: 'string', format: 'date-time' },
+                to: { type: 'string', format: 'date-time' },
+              },
+            },
+            tasks: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/TaskTimeline' },
+            },
+            parallelism: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ParallelismSnapshot' },
+            },
+            summary: {
+              type: 'object',
+              properties: {
+                totalTasks: { type: 'number' },
+                maxConcurrency: { type: 'number' },
+                averageConcurrency: { type: 'number' },
+                timelineStartTime: { type: 'string', format: 'date-time' },
+                timelineEndTime: { type: 'string', format: 'date-time' },
+              },
+            },
+          },
+        },
+        AgentPeriod: {
+          type: 'object',
+          properties: {
+            agent: { type: 'string' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time' },
+            durationSeconds: { type: 'number' },
+            tasksCompleted: { type: 'number' },
+            totalTaskDurationSeconds: { type: 'number' },
+          },
+        },
+        MetricsResponse: {
+          type: 'object',
+          properties: {
+            period: {
+              type: 'object',
+              properties: {
+                from: { type: 'string', format: 'date-time' },
+                to: { type: 'string', format: 'date-time' },
+                sprint: { type: 'string' },
+              },
+            },
+            parallelism: {
+              type: 'object',
+              properties: {
+                averageConcurrency: { type: 'number' },
+                maxConcurrency: { type: 'number' },
+                minConcurrency: { type: 'number' },
+              },
+            },
+            throughput: {
+              type: 'object',
+              properties: {
+                tasksCompleted: { type: 'number' },
+                tasksCreated: { type: 'number' },
+                averageCompletionTime: { type: 'number' },
+              },
+            },
+            leadTime: {
+              type: 'object',
+              properties: {
+                fromTodoToDone: { type: 'number' },
+                fromCreatedToStarted: { type: 'number' },
+                fromStartedToDone: { type: 'number' },
+              },
+            },
+            agentUtilization: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/AgentPeriod' },
+            },
+            efficiency: {
+              type: 'object',
+              properties: {
+                totalTrackedTime: { type: 'number' },
+                totalTaskCount: { type: 'number' },
+                averageTimePerTask: { type: 'number' },
+                utilizationRate: { type: 'number' },
+              },
+            },
+          },
+        },
       },
     },
     security: [{ ApiKeyAuth: [] }, { CookieAuth: [] }],
@@ -235,6 +361,7 @@ const options: swaggerJsdoc.Options = {
     './src/routes/auth.ts',
     './src/routes/task-comments.ts',
     './src/routes/task-time.ts',
+    './src/routes/analytics.ts',
   ],
 };
 
