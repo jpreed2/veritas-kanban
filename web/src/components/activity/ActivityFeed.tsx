@@ -596,7 +596,15 @@ function StatusHistoryPanel({ onTaskClick }: StatusHistoryPanelProps) {
                   <span
                     className={cn(
                       'text-sm truncate flex-1',
-                      entry.taskId && onTaskClick && 'text-primary hover:underline'
+                      entry.taskId && onTaskClick && 'hover:underline',
+                      // Color based on newStatus
+                      entry.newStatus === 'working' || entry.newStatus === 'thinking'
+                        ? 'text-green-500'
+                        : entry.newStatus === 'sub-agent'
+                          ? 'text-blue-500'
+                          : entry.newStatus === 'error'
+                            ? 'text-red-500'
+                            : 'text-gray-500'
                     )}
                     title={entry.taskTitle || 'No task'}
                   >
