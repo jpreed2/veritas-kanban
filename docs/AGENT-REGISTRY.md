@@ -20,7 +20,7 @@ The Agent Registry is a service discovery and liveness tracking system for AI ag
 
 | Agent | Role | Model | Capabilities |
 |-------|------|-------|-------------|
-| **Veritas** | Orchestrator | claude-opus-4-6 | strategy, orchestration, research, code-review, writing, analysis |
+| **VERITAS** | Orchestrator | claude-opus-4-6 | strategy, orchestration, research, code-review, writing, analysis |
 | **TARS** | Lead | claude-opus-4-6 | code-review, architecture, security, refactoring |
 | **CASE** | Lead | claude-opus-4-6 | research, analysis, documentation, writing |
 | **Ava** | Specialist | claude-sonnet-4-5 | frontend, ui-design, css, react |
@@ -346,7 +346,7 @@ Sub-agents are assigned names sequentially from this roster:
 | 8th | **Bishop** | Aliens |
 | 9th | **Marvin** | Hitchhiker's Guide |
 
-Names reset each session. The orchestrator is always **Veritas**.
+Names reset each session. The orchestrator is always **VERITAS**.
 
 ---
 
@@ -381,8 +381,8 @@ The registry is stored as JSON at `.veritas-kanban/agent-registry.json`:
 {
   "agents": {
     "Veritas": {
-      "id": "Veritas",
-      "name": "Veritas",
+      "id": "VERITAS",
+      "name": "VERITAS",
       "model": "anthropic/claude-opus-4-6",
       "provider": "anthropic",
       "capabilities": [
