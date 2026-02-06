@@ -29,6 +29,11 @@ import { DurationDrillDown } from './DurationDrillDown';
 import { TrendsCharts } from './TrendsCharts';
 import { StatusTimeline } from './StatusTimeline';
 import { AgentComparison } from './AgentComparison';
+import { WhereTimeWent } from './WhereTimeWent';
+import { ActivityClock } from './ActivityClock';
+import { HourlyActivityChart } from './HourlyActivityChart';
+import { WallTimeToggle } from './WallTimeToggle';
+import { SessionMetrics } from './SessionMetrics';
 
 // Trend indicator component
 // direction: 'up' always means improvement, 'down' means decline (from backend)
@@ -435,6 +440,18 @@ export function Dashboard() {
             <Skeleton className="h-[200px]" />
           )}
         </div>
+      </div>
+
+      {/* New Dashboard Widgets */}
+      <div className="grid grid-cols-3 gap-4">
+        <WallTimeToggle period={period} />
+        <SessionMetrics period={period} />
+        <ActivityClock period={period} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <WhereTimeWent period={period} />
+        <HourlyActivityChart period={period} />
       </div>
 
       {/* Historical Trends Charts */}
