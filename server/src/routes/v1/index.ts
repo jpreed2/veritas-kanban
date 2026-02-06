@@ -105,6 +105,8 @@ v1Router.use('/backlog', backlogRoutes);
 // ── Feature routes ───────────────────────────────────────────
 v1Router.use('/config', configRoutes);
 v1Router.use('/chat', chatRoutes); // Chat interface - must be before agent routes
+v1Router.use('/agents/register', agentRegistryRoutes); // Before agentRoutes (/:taskId catches "register")
+v1Router.use('/agents/permissions', agentPermissionRoutes);
 v1Router.use('/agents', agentRoutingRoutes); // Must be before agentRoutes (/:taskId would match "route"/"routing")
 v1Router.use('/agents', agentRoutes);
 v1Router.use('/diff', diffRoutes);
@@ -126,8 +128,6 @@ v1Router.use('/traces', tracesRoutes);
 v1Router.use('/settings', settingsRoutes);
 v1Router.use('/settings/transition-hooks', transitionHooksRoutes);
 v1Router.use('/agent/status', agentStatusRoutes);
-v1Router.use('/agents/register', agentRegistryRoutes);
-v1Router.use('/agents/permissions', agentPermissionRoutes);
 v1Router.use('/cost-prediction', costPredictionRoutes);
 v1Router.use('/deliverables', scheduledDeliverablesRoutes);
 v1Router.use('/reports', reportRoutes);
