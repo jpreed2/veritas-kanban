@@ -21,7 +21,6 @@ interface TrendsChartsProps {
 const COLORS = {
   runs: 'hsl(var(--primary))',
   success: 'hsl(142, 76%, 36%)', // Green
-  successRate: 'hsl(142, 76%, 36%)',
   input: 'hsl(217, 91%, 60%)', // Blue
   output: 'hsl(280, 65%, 60%)', // Purple
   duration: 'hsl(38, 92%, 50%)', // Orange/Yellow
@@ -121,49 +120,6 @@ function TaskActivityChart({
             fillOpacity={0.6}
           />
         </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// Success rate line chart
-function SuccessRateChart({ data }: { data: Array<{ date: string; successRate: number }> }) {
-  const chartData = data.map((d) => ({
-    ...d,
-    label: formatShortDate(d.date),
-    successPercent: Math.round(d.successRate * 100),
-  }));
-
-  return (
-    <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fill: COLORS.text, fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            tick={{ fill: COLORS.text, fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            width={40}
-            domain={[0, 100]}
-            tickFormatter={(v) => `${v}%`}
-          />
-          <Tooltip content={<CustomTooltip formatter={(v) => `${v}%`} />} />
-          <Line
-            type="monotone"
-            dataKey="successPercent"
-            stroke={COLORS.successRate}
-            strokeWidth={2}
-            dot={{ fill: COLORS.successRate, strokeWidth: 0, r: 3 }}
-            activeDot={{ r: 5 }}
-            name="Success Rate"
-          />
-        </LineChart>
       </ResponsiveContainer>
     </div>
   );
@@ -322,22 +278,22 @@ export function TrendsCharts({ project }: TrendsChartsProps) {
           <p className="text-sm mt-2">Run some tasks to see historical trends.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* Task Activity full width */}
           <ChartCard title="Task Activity per Day">
             <TaskActivityChart data={data!.daily} />
           </ChartCard>
 
-          <ChartCard title="Success Rate">
-            <SuccessRateChart data={data!.daily} />
-          </ChartCard>
+          {/* Other charts in 2-col grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ChartCard title="Token Usage">
+              <TokensChart data={data!.daily} />
+            </ChartCard>
 
-          <ChartCard title="Token Usage">
-            <TokensChart data={data!.daily} />
-          </ChartCard>
-
-          <ChartCard title="Average Run Duration">
-            <DurationChart data={data!.daily} />
-          </ChartCard>
+            <ChartCard title="Average Run Duration">
+              <DurationChart data={data!.daily} />
+            </ChartCard>
+          </div>
         </div>
       )}
     </div>

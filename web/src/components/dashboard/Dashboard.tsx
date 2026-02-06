@@ -126,7 +126,7 @@ function StatRow({ label, value, subLabel, highlight }: StatRowProps) {
 }
 
 export function Dashboard() {
-  const [period, setPeriod] = useState<MetricsPeriod>('3d');
+  const [period, setPeriod] = useState<MetricsPeriod>('7d');
   const [customFrom, setCustomFrom] = useState<string | undefined>();
   const [customTo, setCustomTo] = useState<string | undefined>();
   const [project, setProject] = useState<string | undefined>(undefined);

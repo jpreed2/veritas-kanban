@@ -8,7 +8,7 @@ import { TELEMETRY_DIR } from './helpers.js';
 import { computeTaskMetrics, computeVelocityMetrics } from './task-metrics.js';
 import { computeRunMetrics, computeDurationMetrics, computeFailedRuns } from './run-metrics.js';
 import { computeTokenMetrics, computeBudgetMetrics } from './token-metrics.js';
-import { computeAllMetrics, computeTrends, computeAgentComparison } from './dashboard-metrics.js';
+import { computeAllMetrics, computeTrends, computeAgentComparison, computeUtilization } from './dashboard-metrics.js';
 import type {
   MetricsPeriod,
   TaskMetrics,
@@ -132,61 +132,8 @@ export class MetricsService {
     to?: string,
     utcOffsetHours?: number,
   ): Promise<import('./types.js').UtilizationMetrics> {
-    const { statusHistoryService } = await import('../status-history-service.js');
-    const { getPeriodStart, getTodayStr, getElapsedTodayMs } = await import('./helpers.js');
-
-    const since = getPeriodStart(period, from);
-    const sinceDate = since ? new Date(since) : null;
-    const toDate = to ? new Date(to) : new Date();
-    const todayStr = getTodayStr(utcOffsetHours);
-    const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-    // Get daily summaries for the period
-    const daily: import('./types.js').DailyUtilization[] = [];
-    let totalActiveMs = 0;
-    let totalIdleMs = 0;
-    let totalErrorMs = 0;
-
-    // Walk dates in the period
-    const startDate = sinceDate || new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-    for (let d = new Date(startDate); d <= toDate; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().slice(0, 10);
-      const summary = await statusHistoryService.getDailySummary(dateStr);
-
-      // For today, use elapsed time instead of full-day totals
-      let dayTotal = summary.activeMs + summary.idleMs + summary.errorMs;
-      if (dateStr === todayStr && dayTotal > 0) {
-        const elapsed = getElapsedTodayMs(utcOffsetHours);
-        dayTotal = Math.max(dayTotal, elapsed);
-      }
-
-      totalActiveMs += summary.activeMs;
-      totalIdleMs += summary.idleMs;
-      totalErrorMs += summary.errorMs;
-
-      daily.push({
-        date: dateStr,
-        activeMs: summary.activeMs,
-        idleMs: summary.idleMs,
-        errorMs: summary.errorMs,
-        utilizationPercent: dayTotal > 0
-          ? Math.round((summary.activeMs / dayTotal) * 10000) / 100
-          : 0,
-      });
-    }
-
-    const totalMs = totalActiveMs + totalIdleMs + totalErrorMs;
-
-    return {
-      period,
-      totalActiveMs,
-      totalIdleMs,
-      totalErrorMs,
-      utilizationPercent: totalMs > 0
-        ? Math.round((totalActiveMs / totalMs) * 10000) / 100
-        : 0,
-      daily,
-    };
+    // Use telemetry-based computation (reliable data source)
+    return computeUtilization(this.telemetryDir, period, from, to, utcOffsetHours);
   }
 
   async getFailedRuns(

@@ -61,10 +61,10 @@ export function WallTimeToggle({ period }: WallTimeToggleProps) {
         <h3 className="text-sm font-medium flex items-center gap-2">
           <Icon className="w-4 h-4 text-muted-foreground" />
           {label}
-          <TooltipProvider>
+          <TooltipProvider delayDuration={0}>
             <Tooltip>
-              <TooltipTrigger>
-                <Info className="w-3 h-3 text-muted-foreground" />
+              <TooltipTrigger asChild>
+                <button type="button" className="inline-flex"><Info className="w-3 h-3 text-muted-foreground" /></button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-[250px]">
                 <p className="text-xs">
