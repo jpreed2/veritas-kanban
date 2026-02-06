@@ -192,6 +192,22 @@ export interface Task {
   // Position within column (for drag-and-drop ordering)
   position?: number;
 
+  // Cost prediction and tracking
+  costPrediction?: {
+    estimatedCost: number;
+    confidence: 'low' | 'medium' | 'high';
+    sampleSize: number;
+    factors: {
+      baseCost: number;
+      typeMultiplier: number;
+      priorityMultiplier: number;
+      complexityMultiplier: number;
+      projectAdjustment: number;
+    };
+    predictedAt: string;
+  };
+  actualCost?: number; // Actual cost after completion (from telemetry)
+
   // Lessons learned (captured after task completion)
   lessonsLearned?: string; // Markdown content
   lessonTags?: string[]; // Categorization tags
