@@ -8,3 +8,6 @@ export * from './websocket.types.js';
 export * from './managed-list.types.js';
 export * from './chat.types.js';
 export * from './transition-hooks.types.js';
+export * from './changes.types.js';
+export * from './broadcast.types.js';
+export * from './agent-registry.types.js';

@@ -36,6 +36,8 @@ import { diffRoutes } from '../diff.js';
 import { automationRoutes } from '../automation.js';
 import { summaryRoutes } from '../summary.js';
 import { notificationRoutes } from '../notifications.js';
+import { broadcastRoutes } from '../broadcasts.js';
+import { changesRoutes } from '../changes.js';
 import templateRoutes from '../templates.js';
 import taskTypeRoutes from '../task-types.js';
 import projectRoutes from '../projects.js';
@@ -104,6 +106,7 @@ v1Router.use('/backlog', backlogRoutes);
 
 // ── Feature routes ───────────────────────────────────────────
 v1Router.use('/config', configRoutes);
+v1Router.use('/changes', changesRoutes); // Efficient agent polling endpoint
 v1Router.use('/chat', chatRoutes); // Chat interface - must be before agent routes
 v1Router.use('/agents/register', agentRegistryRoutes); // Before agentRoutes (/:taskId catches "register")
 v1Router.use('/agents/permissions', agentPermissionRoutes);
@@ -113,6 +116,7 @@ v1Router.use('/diff', diffRoutes);
 v1Router.use('/automation', automationRoutes);
 v1Router.use('/summary', summaryRoutes);
 v1Router.use('/notifications', notificationRoutes);
+v1Router.use('/broadcasts', broadcastRoutes);
 v1Router.use('/templates', templateRoutes);
 v1Router.use('/task-types', taskTypeRoutes);
 v1Router.use('/projects', projectRoutes);
