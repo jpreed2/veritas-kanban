@@ -113,6 +113,28 @@ veritas-kanban/
 
 **This is a hard constraint, not a guideline.** It's the file-level equivalent of sequential branch merges.
 
+### Squad Chat Protocol (Mandatory)
+
+Every agent (human or AI) **must** post to squad chat when starting work, hitting milestones, completing tasks, or finding issues. Squad chat is the glass box — real-time visibility into what's happening.
+
+```bash
+# Regular messages (agents post these):
+./scripts/squad-post.sh --model claude-sonnet-4.5 AGENT_NAME "Your update" tag1 tag2
+
+# System events (orchestrator posts these):
+./scripts/squad-event.sh --model claude-sonnet-4.5 spawned AGENT_NAME "Task Title"
+./scripts/squad-event.sh completed AGENT_NAME "Task Title" "2m35s"
+
+# Or curl directly:
+curl -s -X POST "http://localhost:3001/api/chat/squad" \
+  -H 'Content-Type: application/json' \
+  -d '{"agent":"AGENT_NAME","message":"Your update","tags":["tag1"],"model":"claude-sonnet-4.5"}'
+```
+
+The `--model` flag is optional but recommended — it shows which AI model is behind each agent in the UI. System events (`spawned`, `completed`, `failed`) render as divider lines in the squad chat panel.
+
+See [SQUAD-CHAT-PROTOCOL.md](docs/SQUAD-CHAT-PROTOCOL.md) for full details.
+
 ### Pre-Commit Review Protocol (Mandatory)
 
 Before every commit, run these 4 reviews:

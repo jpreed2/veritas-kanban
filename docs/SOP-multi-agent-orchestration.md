@@ -76,6 +76,41 @@ Use emojis/reactions sparingly; detailed summaries live in comments.
 
 ---
 
+## Squad Chat Protocol
+
+All agents — PM and workers — must post to squad chat. This is the glass box.
+
+**PM (orchestrator) responsibilities:**
+
+```bash
+# Before spawning each worker (include --model to show which AI is working):
+./scripts/squad-event.sh --model gpt-5.1 spawned WORKER_NAME "Task Title"
+
+# When worker completes:
+./scripts/squad-event.sh completed WORKER_NAME "Task Title" "duration"
+
+# When worker fails:
+./scripts/squad-event.sh failed WORKER_NAME "Task Title" "duration"
+
+# Coordination updates (regular messages):
+./scripts/squad-post.sh --model claude-opus-4-6 PM_NAME "Dispatching 3 workers for sprint" coordination
+```
+
+**Worker responsibilities:**
+
+```bash
+# Post progress throughout work — include model so humans see which AI is behind each agent:
+./scripts/squad-post.sh --model gpt-5.1 WORKER_NAME "Starting code review" review
+./scripts/squad-post.sh --model gpt-5.1 WORKER_NAME "Found 3 issues, fixing" fix
+./scripts/squad-post.sh --model gpt-5.1 WORKER_NAME "Complete — 10/10" review complete
+```
+
+The `--model` flag is optional but recommended. It shows which AI model is behind each agent in the squad chat UI — part of the glass box transparency.
+
+See [SQUAD-CHAT-PROTOCOL.md](SQUAD-CHAT-PROTOCOL.md) for full details.
+
+---
+
 ## Example: Opus PM orchestrating Codex workers
 
 1. **Human**: `sessions_spawn` Opus with task “Be PM for US-1600”.

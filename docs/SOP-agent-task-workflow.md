@@ -155,6 +155,36 @@ Store this under `prompt-registry/agent-task-workflow.md` so every agent run is 
 
 ---
 
+## Squad Chat Integration
+
+Every agent must post to squad chat throughout their work. This is the **glass box** — real-time visibility into what agents are doing.
+
+### Regular Messages (agents post these)
+
+```bash
+# Include --model to show which AI model is behind the agent
+./scripts/squad-post.sh --model claude-sonnet-4.5 AGENT_NAME "What you're working on" tag1 tag2
+```
+
+### System Events (orchestrator posts these)
+
+```bash
+# When spawning a sub-agent:
+./scripts/squad-event.sh --model claude-sonnet-4.5 spawned AGENT_NAME "Task Title"
+
+# When a sub-agent completes:
+./scripts/squad-event.sh completed AGENT_NAME "Task Title" "2m35s"
+
+# When a sub-agent fails:
+./scripts/squad-event.sh failed AGENT_NAME "Task Title" "45s"
+```
+
+The `--model` flag is optional but recommended — it displays in the UI next to the agent name so humans can see which AI model generated each message.
+
+System events render as divider lines in the UI — visually distinct from regular chat. See [SQUAD-CHAT-PROTOCOL.md](SQUAD-CHAT-PROTOCOL.md) for full details.
+
+---
+
 ## Escalation
 
 | Situation               | Action                                                                          |

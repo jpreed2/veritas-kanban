@@ -63,6 +63,7 @@ Open [http://localhost:3000](http://localhost:3000) — that's it. The board aut
 
 - [Getting Started Guide](docs/GETTING-STARTED.md) — zero ➝ agent-ready in 5 minutes, plus sanity checks and prompt registry tips.
 - [Agent Task Workflow SOP](docs/SOP-agent-task-workflow.md) — lifecycle, API/CLI snippets, prompts.
+- [Squad Chat Protocol](docs/SQUAD-CHAT-PROTOCOL.md) — agent messaging, system events (spawned/completed/failed), model attribution, and helper scripts.
 - [Sprint Planning SOP](docs/SOP-sprint-planning.md) — epic → sprint → task breakdown.
 - [Multi-Agent Orchestration](docs/SOP-multi-agent-orchestration.md) — PM + worker handoffs.
 - [Cross-Model Code Review](docs/SOP-cross-model-code-review.md) — enforce Claude ↔ GPT reviews.
@@ -119,7 +120,7 @@ Open [http://localhost:3000](http://localhost:3000) — that's it. The board aut
 
 ### 🤖 AI Agents (v2.0)
 
-- **Squad Chat** — Real-time agent-to-agent communication with WebSocket updates, system messages for agent events, configurable display names (NEW — v2.0)
+- **Squad Chat** — Real-time agent-to-agent communication with WebSocket updates, system lifecycle events (spawned/completed/failed), model attribution per message, and configurable display names (NEW — v2.0)
 - **Broadcast Notifications** — Priority-based persistent notifications with read receipts and agent-specific delivery (NEW — v2.0)
 - **Task Deliverables** — First-class deliverable objects with type/status tracking (code, documentation, data, etc.) (NEW — v2.0)
 - **Efficient Polling** — `/api/changes?since=...` endpoint with ETag support for optimized agent polling (NEW — v2.0)

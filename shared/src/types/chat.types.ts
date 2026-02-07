@@ -51,6 +51,7 @@ export interface SquadMessage {
   message: string;
   tags?: string[]; // Optional categorization
   timestamp: string;
+  model?: string; // Which model generated this message (e.g., "claude-sonnet-4.5")
   system?: boolean; // True if this is an automated system message
   event?: 'agent.spawned' | 'agent.completed' | 'agent.failed' | 'agent.status'; // Event type for system messages
   taskTitle?: string; // Task title for system messages
@@ -64,6 +65,7 @@ export interface SquadMessageInput {
   agent: string;
   message: string;
   tags?: string[];
+  model?: string; // Which model generated this message
   system?: boolean; // Mark as system message
   event?: 'agent.spawned' | 'agent.completed' | 'agent.failed' | 'agent.status';
   taskTitle?: string;

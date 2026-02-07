@@ -347,6 +347,7 @@ export class ChatService {
       agent: string;
       message: string;
       tags?: string[];
+      model?: string;
       system?: boolean;
       event?: 'agent.spawned' | 'agent.completed' | 'agent.failed' | 'agent.status';
       taskTitle?: string;
@@ -364,6 +365,7 @@ export class ChatService {
       message: input.message,
       tags: input.tags,
       timestamp,
+      model: input.model,
       system: input.system,
       event: input.event,
       taskTitle: input.taskTitle,
@@ -388,12 +390,13 @@ export class ChatService {
       // Append the new message in a consistent format
       const systemTag = squadMessage.system ? ' [system]' : '';
       const eventTag = squadMessage.event ? ` [${squadMessage.event}]` : '';
+      const modelTag = squadMessage.model ? ` [model:${squadMessage.model}]` : '';
       const tagsStr = squadMessage.tags?.length ? ` [${squadMessage.tags.join(', ')}]` : '';
       const displayStr = displayName ? ` (${displayName})` : '';
       const taskTitleStr = squadMessage.taskTitle ? ` | ${squadMessage.taskTitle}` : '';
       const durationStr = squadMessage.duration ? ` (${squadMessage.duration})` : '';
 
-      const messageBlock = `## ${squadMessage.agent}${displayStr} | ${messageId} | ${timestamp}${systemTag}${eventTag}${tagsStr}${taskTitleStr}${durationStr}\n\n${squadMessage.message}\n\n---\n\n`;
+      const messageBlock = `## ${squadMessage.agent}${displayStr} | ${messageId} | ${timestamp}${systemTag}${eventTag}${modelTag}${tagsStr}${taskTitleStr}${durationStr}\n\n${squadMessage.message}\n\n---\n\n`;
 
       content += messageBlock;
 
@@ -401,7 +404,7 @@ export class ChatService {
     });
 
     log.info(
-      { messageId, agent: input.agent, tags: input.tags, system: input.system },
+      { messageId, agent: input.agent, tags: input.tags, model: input.model, system: input.system },
       'Squad message sent'
     );
 
@@ -463,8 +466,12 @@ export class ChatService {
           const eventMatch = bracketMatches.find((value) => value.startsWith('agent.'));
           const event = eventMatch ? (eventMatch as SquadMessage['event']) : undefined;
 
+          const modelMatch = bracketMatches.find((value) => value.startsWith('model:'));
+          const model = modelMatch ? modelMatch.replace('model:', '') : undefined;
+
           const tagMatch = bracketMatches.find(
-            (value) => value !== 'system' && !value.startsWith('agent.')
+            (value) =>
+              value !== 'system' && !value.startsWith('agent.') && !value.startsWith('model:')
           );
           const tags = tagMatch
             ? tagMatch
@@ -506,6 +513,7 @@ export class ChatService {
             message: messageBody,
             tags,
             timestamp,
+            model,
             system: isSystem ? true : undefined,
             event,
             taskTitle,

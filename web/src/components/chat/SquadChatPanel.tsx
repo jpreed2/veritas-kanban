@@ -303,6 +303,7 @@ const SquadMessageBubble = React.memo(function SquadMessageBubble({
             {displayName}
             {isHuman && <span className="ml-1 text-xs opacity-70">(Human)</span>}
           </span>
+          {message.model && <span className="text-xs opacity-50 font-mono">{message.model}</span>}
           {message.tags && message.tags.length > 0 && (
             <div className="flex gap-1">
               {message.tags.map((tag) => (
@@ -351,16 +352,17 @@ const SystemMessageDivider = React.memo(function SystemMessageDivider({
   const getEventText = () => {
     const duration = message.duration ? ` (${message.duration})` : '';
     const taskTitle = message.taskTitle ? `: ${message.taskTitle}` : '';
+    const model = message.model ? ` [${message.model}]` : '';
 
     switch (message.event) {
       case 'agent.spawned':
-        return `${message.agent} assigned${taskTitle}`;
+        return `${message.agent}${model} assigned${taskTitle}`;
       case 'agent.completed':
-        return `${message.agent} completed${taskTitle}${duration}`;
+        return `${message.agent}${model} completed${taskTitle}${duration}`;
       case 'agent.failed':
-        return `${message.agent} failed${taskTitle}${duration}`;
+        return `${message.agent}${model} failed${taskTitle}${duration}`;
       case 'agent.status':
-        return `${message.agent} is working on${taskTitle}${duration}`;
+        return `${message.agent}${model} is working on${taskTitle}${duration}`;
       default:
         return message.message;
     }
