@@ -66,6 +66,8 @@ The multi-stage Dockerfile produces a minimal production image (< 200 MB):
 
 The production stage runs as a non-root user (`veritas`, UID 1001) for security.
 
+**Path Resolution (v2.1.2):** The production image uses `WORKDIR /app/server` to ensure services correctly resolve the `.veritas-kanban` directory. Services use `process.cwd()/..` to locate the project root; with `WORKDIR /app` this would resolve to `/` (filesystem root), causing permission errors.
+
 ### docker-compose.yml
 
 ```yaml

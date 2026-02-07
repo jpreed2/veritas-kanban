@@ -328,6 +328,25 @@ The container runs as non-root (UID 1001). Fix volume permissions:
 sudo chown -R 1001:1001 ./data
 ```
 
+### EACCES: permission denied on container startup (v2.1.2 fix)
+
+**Symptom:** Container starts but crashes immediately with `EACCES: permission denied` when trying to create `.veritas-kanban` directory.
+
+**Root cause:** Services use `process.cwd()/..` to resolve the project root. With `WORKDIR /app`, this resolves to `/` (filesystem root), which is not writable by the non-root user.
+
+**Fix:** Version 2.1.2 changed the production WORKDIR to `/app/server` and ensured `/app/tasks` and `/app/server` are writable. Update to v2.1.2+ to resolve:
+
+```bash
+git pull origin main
+docker compose build --no-cache
+docker compose up -d
+```
+
+If you've customized the Dockerfile, ensure:
+
+- `WORKDIR /app/server` (not `/app`)
+- Directories `/app/tasks` and `/app/server` are owned by UID 1001
+
 ### Rebuilding after code changes
 
 ```bash

@@ -14,6 +14,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: veritas-kanban
+    # IMPORTANT: Must match Dockerfile WORKDIR (/app/server) for correct path resolution
+    # Services use process.cwd()/.. to locate project root; mismatched WORKDIR causes EACCES errors
     working_dir: /app
     ports:
       - '3001:3001'
