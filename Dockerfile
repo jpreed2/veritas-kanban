@@ -86,8 +86,11 @@ COPY --from=build-server /app/server/dist ./server/dist
 COPY --from=build-web /app/web/dist ./web/dist
 
 # Create data directories for persistent storage and runtime config
-RUN mkdir -p /app/data /app/.veritas-kanban && \
-    chown -R veritas:nodejs /app/data /app/.veritas-kanban
+# Note: services resolve .veritas-kanban from both cwd/.. and cwd directly,
+# so we create it at /app/ level AND ensure server/ is writable for services
+# that use process.cwd()/.veritas-kanban when WORKDIR is /app/server
+RUN mkdir -p /app/data /app/.veritas-kanban /app/tasks && \
+    chown -R veritas:nodejs /app/data /app/.veritas-kanban /app/tasks /app/server
 
 # Switch to non-root user
 USER veritas
@@ -103,5 +106,9 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
+# Set working directory to server/ so path.resolve(cwd, '..') resolves to /app
+# (Services use process.cwd()/.. to find .veritas-kanban and tasks directories)
+WORKDIR /app/server
+
 # Start server
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "dist/index.js"]
