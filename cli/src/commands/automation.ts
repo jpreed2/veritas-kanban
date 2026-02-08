@@ -15,14 +15,14 @@ export function registerAutomationCommands(program: Command): void {
     .action(async (options) => {
       try {
         const tasks = await api<Task[]>('/api/automation/pending');
-        
+
         if (options.json) {
           console.log(formatTasksJson(tasks));
         } else if (tasks.length === 0) {
           console.log(chalk.dim('No pending automation tasks'));
         } else {
           console.log(chalk.bold('Pending Automation Tasks:\n'));
-          tasks.forEach(task => console.log(formatTask(task, true)));
+          tasks.forEach((task: Task) => console.log(formatTask(task, true)));
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -39,14 +39,14 @@ export function registerAutomationCommands(program: Command): void {
     .action(async (options) => {
       try {
         const tasks = await api<Task[]>('/api/automation/running');
-        
+
         if (options.json) {
           console.log(formatTasksJson(tasks));
         } else if (tasks.length === 0) {
           console.log(chalk.dim('No running automation tasks'));
         } else {
           console.log(chalk.bold('Running Automation Tasks:\n'));
-          tasks.forEach(task => console.log(formatTask(task, true)));
+          tasks.forEach((task: Task) => console.log(formatTask(task, true)));
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -64,17 +64,22 @@ export function registerAutomationCommands(program: Command): void {
     .action(async (id, options) => {
       try {
         const task = await findTask(id);
-        
+
         if (!task) {
           console.error(chalk.red(`Task not found: ${id}`));
           process.exit(1);
         }
-        
-        const result = await api<{ taskId: string; attemptId: string; title: string; description: string }>(`/api/automation/${task.id}/start`, {
+
+        const result = await api<{
+          taskId: string;
+          attemptId: string;
+          title: string;
+          description: string;
+        }>(`/api/automation/${task.id}/start`, {
           method: 'POST',
           body: JSON.stringify({ sessionKey: options.session }),
         });
-        
+
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
         } else {
@@ -102,20 +107,23 @@ export function registerAutomationCommands(program: Command): void {
     .action(async (id, options) => {
       try {
         const task = await findTask(id);
-        
+
         if (!task) {
           console.error(chalk.red(`Task not found: ${id}`));
           process.exit(1);
         }
-        
-        const result = await api<{ taskId: string; status: string }>(`/api/automation/${task.id}/complete`, {
-          method: 'POST',
-          body: JSON.stringify({
-            result: options.result,
-            status: options.failed ? 'failed' : 'complete',
-          }),
-        });
-        
+
+        const result = await api<{ taskId: string; status: string }>(
+          `/api/automation/${task.id}/complete`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              result: options.result,
+              status: options.failed ? 'failed' : 'complete',
+            }),
+          }
+        );
+
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
         } else {

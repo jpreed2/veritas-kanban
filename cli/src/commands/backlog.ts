@@ -32,7 +32,7 @@ export function registerBacklogCommands(program: Command): void {
           console.log(chalk.dim('No tasks in backlog'));
         } else {
           console.log(chalk.bold(`\nBacklog (${tasks.length} tasks):\n`));
-          tasks.forEach((task) => console.log(formatTask(task)));
+          tasks.forEach((task: Task) => console.log(formatTask(task)));
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));

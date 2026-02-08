@@ -29,7 +29,7 @@ export function registerProjectCommands(program: Command): void {
         } else {
           console.log(chalk.bold('\n📁 Projects\n'));
           console.log(chalk.dim('─'.repeat(50)));
-          projects.forEach((p) => {
+          projects.forEach((p: Project) => {
             let line = `  ${chalk.cyan(p.label)}`;
             if (p.color) {
               line += chalk.dim(` [${p.color}]`);

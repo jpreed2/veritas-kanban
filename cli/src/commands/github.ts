@@ -45,7 +45,7 @@ export function registerGitHubCommands(program: Command): void {
 
         if (result.errors.length > 0) {
           console.log(chalk.red('\n  Errors:'));
-          result.errors.forEach((e) => console.log(`    • ${e}`));
+          result.errors.forEach((e: string) => console.log(`    • ${e}`));
         }
 
         console.log(chalk.dim(`\n  Last sync: ${result.lastSyncAt}`));

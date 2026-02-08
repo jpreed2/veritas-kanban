@@ -9,32 +9,36 @@ export function registerAgentCommands(program: Command): void {
   program
     .command('start <id>')
     .description('Start an agent on a task')
-    .option('-a, --agent <agent>', 'Agent to use (claude-code, amp, copilot, gemini)', 'claude-code')
+    .option(
+      '-a, --agent <agent>',
+      'Agent to use (claude-code, amp, copilot, gemini)',
+      'claude-code'
+    )
     .option('--json', 'Output as JSON')
     .action(async (id, options) => {
       try {
         const task = await findTask(id);
-        
+
         if (!task) {
           console.error(chalk.red(`Task not found: ${id}`));
           process.exit(1);
         }
-        
+
         if (task.type !== 'code') {
           console.error(chalk.red('Can only start agents on code tasks'));
           process.exit(1);
         }
-        
+
         if (!task.git?.worktreePath) {
           console.error(chalk.red('Task needs a worktree first. Create one via the UI.'));
           process.exit(1);
         }
-        
+
         const result = await api<{ attemptId: string }>(`/api/agents/${task.id}/start`, {
           method: 'POST',
           body: JSON.stringify({ agent: options.agent }),
         });
-        
+
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
         } else {
@@ -56,14 +60,14 @@ export function registerAgentCommands(program: Command): void {
     .action(async (id, options) => {
       try {
         const task = await findTask(id);
-        
+
         if (!task) {
           console.error(chalk.red(`Task not found: ${id}`));
           process.exit(1);
         }
-        
+
         await api(`/api/agents/${task.id}/stop`, { method: 'POST' });
-        
+
         if (options.json) {
           console.log(JSON.stringify({ stopped: true }));
         } else {
@@ -82,38 +86,48 @@ export function registerAgentCommands(program: Command): void {
     .option('--json', 'Output as JSON')
     .action(async (options) => {
       try {
-        const pending = await api<{
-          taskId: string;
-          attemptId: string;
-          prompt: string;
-          requestedAt: string;
-          callbackUrl: string;
-        }[]>('/api/agents/pending');
-        
+        const pending = await api<
+          {
+            taskId: string;
+            attemptId: string;
+            prompt: string;
+            requestedAt: string;
+            callbackUrl: string;
+          }[]
+        >('/api/agents/pending');
+
         if (options.json) {
           console.log(JSON.stringify(pending, null, 2));
         } else if (pending.length === 0) {
           console.log(chalk.dim('No pending agent requests'));
         } else {
           console.log(chalk.bold(`\n🤖 ${pending.length} Pending Agent Request(s)\n`));
-          
-          pending.forEach(req => {
-            console.log(chalk.cyan(`Task: ${req.taskId}`));
-            console.log(chalk.dim(`  Attempt: ${req.attemptId}`));
-            console.log(chalk.dim(`  Requested: ${new Date(req.requestedAt).toLocaleString()}`));
-            console.log(chalk.dim(`  Callback: ${req.callbackUrl}`));
-            console.log();
-            
-            // Print first few lines of prompt
-            const promptLines = req.prompt.split('\n').slice(0, 10);
-            console.log(chalk.dim('─'.repeat(50)));
-            promptLines.forEach(line => console.log(chalk.dim(`  ${line}`)));
-            if (req.prompt.split('\n').length > 10) {
-              console.log(chalk.dim('  ...'));
+
+          pending.forEach(
+            (req: {
+              taskId: string;
+              attemptId: string;
+              prompt: string;
+              requestedAt: string;
+              callbackUrl: string;
+            }) => {
+              console.log(chalk.cyan(`Task: ${req.taskId}`));
+              console.log(chalk.dim(`  Attempt: ${req.attemptId}`));
+              console.log(chalk.dim(`  Requested: ${new Date(req.requestedAt).toLocaleString()}`));
+              console.log(chalk.dim(`  Callback: ${req.callbackUrl}`));
+              console.log();
+
+              // Print first few lines of prompt
+              const promptLines = req.prompt.split('\n').slice(0, 10);
+              console.log(chalk.dim('─'.repeat(50)));
+              promptLines.forEach((line: string) => console.log(chalk.dim(`  ${line}`)));
+              if (req.prompt.split('\n').length > 10) {
+                console.log(chalk.dim('  ...'));
+              }
+              console.log(chalk.dim('─'.repeat(50)));
+              console.log();
             }
-            console.log(chalk.dim('─'.repeat(50)));
-            console.log();
-          });
+          );
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -137,12 +151,12 @@ export function registerAgentCommands(program: Command): void {
           summary: options.summary,
           error: options.error,
         };
-        
+
         await api(`/api/agents/${taskId}/complete`, {
           method: 'POST',
           body: JSON.stringify(body),
         });
-        
+
         if (success) {
           console.log(chalk.green(`✓ Task ${taskId} marked as complete`));
         } else {
@@ -169,7 +183,7 @@ export function registerAgentCommands(program: Command): void {
           status?: string;
           startedAt?: string;
         }>(`/api/agents/${taskId}/status`);
-        
+
         if (options.json) {
           console.log(JSON.stringify(status, null, 2));
         } else if (!status.running) {
@@ -179,7 +193,9 @@ export function registerAgentCommands(program: Command): void {
           console.log(`  Task: ${status.taskId}`);
           console.log(`  Attempt: ${status.attemptId}`);
           console.log(`  Agent: ${status.agent}`);
-          console.log(`  Started: ${status.startedAt ? new Date(status.startedAt).toLocaleString() : 'unknown'}`);
+          console.log(
+            `  Started: ${status.startedAt ? new Date(status.startedAt).toLocaleString() : 'unknown'}`
+          );
         }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));

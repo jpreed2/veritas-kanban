@@ -30,17 +30,21 @@ export function registerSummaryCommands(program: Command): void {
         const projects = Object.entries(summary.byProject);
         if (projects.length > 0) {
           console.log(chalk.dim('\nProjects:'));
-          projects.forEach(([name, stats]) => {
-            const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-            console.log(`  ${name}: ${stats.done}/${stats.total} (${percent}%)`);
-          });
+          projects.forEach(
+            ([name, stats]: [string, { total: number; done: number; inProgress: number }]) => {
+              const percent = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+              console.log(`  ${name}: ${stats.done}/${stats.total} (${percent}%)`);
+            }
+          );
         }
 
         if (summary.highPriority.length > 0) {
           console.log(chalk.red('\n🔴 High Priority:'));
-          summary.highPriority.forEach((t) => {
-            console.log(`  ${t.title} [${t.status}]${t.project ? ` #${t.project}` : ''}`);
-          });
+          summary.highPriority.forEach(
+            (t: { id: string; title: string; status: string; project?: string }) => {
+              console.log(`  ${t.title} [${t.status}]${t.project ? ` #${t.project}` : ''}`);
+            }
+          );
         }
 
         console.log();

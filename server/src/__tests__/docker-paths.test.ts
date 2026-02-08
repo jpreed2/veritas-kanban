@@ -9,6 +9,21 @@ vi.mock('node:fs/promises', async () => {
   };
 });
 
+// Mock fs.existsSync to prevent filesystem reads in tests
+// Return true for pnpm-workspace.yaml in /app directory to simulate Docker environment
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+  return {
+    ...actual,
+    existsSync: vi.fn((path: string) => {
+      if (typeof path === 'string' && path.includes('pnpm-workspace.yaml')) {
+        return path === '/app/pnpm-workspace.yaml';
+      }
+      return false;
+    }),
+  };
+});
+
 describe('paths: Docker DATA_DIR support', () => {
   const originalEnv = { ...process.env };
 
