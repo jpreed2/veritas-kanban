@@ -1,14 +1,20 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
 // Mock node:fs/promises completely to prevent ANY filesystem operations
-vi.mock('node:fs/promises', () => ({
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn().mockResolvedValue(''),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-  readdir: vi.fn().mockResolvedValue([]),
-  stat: vi.fn().mockResolvedValue({ isDirectory: () => true }),
-  access: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('node:fs/promises', () => {
+  const mockFsPromises = {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue(''),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    readdir: vi.fn().mockResolvedValue([]),
+    stat: vi.fn().mockResolvedValue({ isDirectory: () => true }),
+    access: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    ...mockFsPromises,
+    default: mockFsPromises, // Provide default export
+  };
+});
 
 // Mock node:fs to prevent filesystem reads
 vi.mock('node:fs', () => {
