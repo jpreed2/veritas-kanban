@@ -42,23 +42,51 @@ export class WorkflowStepExecutor {
 
   /**
    * Execute an agent step (spawns OpenClaw session)
-   * Phase 1: Placeholder implementation — will integrate OpenClaw in Phase 2
+   * Phase 2: Progress file integration, template resolution
    */
   private async executeAgentStep(
     step: WorkflowStep,
     run: WorkflowRun
   ): Promise<StepExecutionResult> {
+    // Phase 2: Load progress file and add to context (#108)
+    const progress = await this.loadProgressFile(run.id);
+    const contextWithProgress = {
+      ...run.context,
+      progress: progress || '',
+      // Add steps context for {{steps.step-id.output}} template resolution
+      steps: this.buildStepsContext(run),
+    };
+
     // Render the input prompt with context
-    const prompt = this.renderTemplate(step.input || '', run.context);
+    const prompt = this.renderTemplate(step.input || '', contextWithProgress);
+
+    // Phase 2: Session management (#111)
+    const sessionMode = step.session || step.fresh_session === false ? 'reuse' : 'fresh';
+    const agentDef = this.getAgentDefinition(run, step.agent!);
 
     log.info(
-      { runId: run.id, stepId: step.id, agent: step.agent },
+      { runId: run.id, stepId: step.id, agent: step.agent, sessionMode },
       'Agent step execution (placeholder)'
     );
 
     // Phase 2 (tracked in #110): Spawn OpenClaw session via sessions_spawn
     // Implementation will integrate with ClawdbotAgentService pattern
-    // const sessionKey = await this.spawnAgent(step.agent!, prompt, run.taskId);
+    // Session management logic:
+    // if (sessionMode === 'reuse') {
+    //   const lastSessionKey = run.context._sessions?.[step.agent!];
+    //   if (lastSessionKey) {
+    //     // Continue existing session
+    //     const result = await this.continueSession(lastSessionKey, prompt);
+    //   } else {
+    //     // No existing session, fall back to fresh
+    //     const sessionKey = await this.spawnAgent(step.agent!, prompt, run.taskId, agentDef?.tools);
+    //     run.context._sessions = { ...run.context._sessions, [step.agent!]: sessionKey };
+    //   }
+    // } else {
+    //   // Fresh session
+    //   const sessionKey = await this.spawnAgent(step.agent!, prompt, run.taskId, agentDef?.tools);
+    //   run.context._sessions = { ...run.context._sessions, [step.agent!]: sessionKey };
+    // }
     // const result = await this.waitForSession(sessionKey);
 
     // Placeholder: Simulate agent execution (Phase 1 only)
@@ -72,6 +100,9 @@ export class WorkflowStepExecutor {
 
     // Write output to step-outputs/
     const outputPath = await this.saveStepOutput(run.id, step.id, result);
+
+    // Phase 2: Append to progress file (#108)
+    await this.appendProgressFile(run.id, step.id, result);
 
     return {
       output: parsed,
@@ -199,5 +230,73 @@ export class WorkflowStepExecutor {
     log.info({ sessionKey }, 'Session cleanup (placeholder)');
     // Phase 2 (tracked in #110): Call OpenClaw session cleanup API
     // Will integrate with sessions API for proper resource cleanup
+  }
+
+  // ==================== Phase 2: Progress File Integration (#108) ====================
+
+  /**
+   * Load progress.md file for a workflow run
+   * Returns content or null if file doesn't exist
+   */
+  private async loadProgressFile(runId: string): Promise<string | null> {
+    const progressPath = path.join(this.runsDir, runId, 'progress.md');
+
+    try {
+      const content = await fs.readFile(progressPath, 'utf-8');
+      return content;
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
+        return null; // File doesn't exist yet
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Append step output to progress.md
+   */
+  private async appendProgressFile(runId: string, stepId: string, output: unknown): Promise<void> {
+    const progressPath = path.join(this.runsDir, runId, 'progress.md');
+    const timestamp = new Date().toISOString();
+
+    const entry = `## Step: ${stepId} (${timestamp})\n\n${typeof output === 'string' ? output : JSON.stringify(output, null, 2)}\n\n---\n\n`;
+
+    await fs.appendFile(progressPath, entry, 'utf-8');
+
+    log.info({ runId, stepId }, 'Progress file updated');
+  }
+
+  /**
+   * Build steps context for template resolution
+   * Enables {{steps.step-id.output}} references
+   */
+  private buildStepsContext(run: WorkflowRun): Record<string, any> {
+    const stepsContext: Record<string, any> = {};
+
+    for (const stepRun of run.steps) {
+      if (stepRun.status === 'completed' && run.context[stepRun.stepId]) {
+        stepsContext[stepRun.stepId] = {
+          output: run.context[stepRun.stepId],
+          status: stepRun.status,
+          duration: stepRun.duration,
+        };
+      }
+    }
+
+    return stepsContext;
+  }
+
+  // ==================== Phase 2: Tool Policies & Session Management (#110, #111) ====================
+
+  /**
+   * Get agent definition from workflow context
+   * Used to retrieve agent-specific settings (tools, model, etc.)
+   */
+  private getAgentDefinition(run: WorkflowRun, agentId: string): any {
+    // Agent definitions are stored in workflow context during run initialization
+    const workflow = run.context.workflow;
+    if (!workflow || !workflow.agents) return null;
+
+    return workflow.agents.find((a: any) => a.id === agentId) || null;
   }
 }
