@@ -6,6 +6,7 @@ import { activityService } from '../services/activity-service.js';
 import { getBlockingService } from '../services/blocking-service.js';
 import { getGitHubSyncService } from '../services/github-sync-service.js';
 import { getDelegationService } from '../services/delegation-service.js';
+import { getProgressService } from '../services/progress-service.js';
 import type { CreateTaskInput, UpdateTaskInput, Task, TaskSummary } from '@veritas-kanban/shared';
 import { broadcastTaskChange } from '../services/broadcast-service.js';
 import { asyncHandler } from '../middleware/async-handler.js';
@@ -21,6 +22,7 @@ const taskService = getTaskService();
 const worktreeService = new WorktreeService();
 const blockingService = getBlockingService();
 const delegationService = getDelegationService();
+const progressService = getProgressService();
 
 // Validation schemas
 const createTaskSchema = z.object({
@@ -98,6 +100,8 @@ const subtaskSchema = z.object({
   title: z.string(),
   completed: z.boolean(),
   created: z.string(),
+  acceptanceCriteria: z.array(z.string()).optional(),
+  criteriaChecked: z.array(z.boolean()).optional(),
 });
 
 const githubSchema = z
@@ -128,6 +132,12 @@ const updateTaskSchema = z.object({
   plan: z.string().optional(),
   automation: automationSchema,
   position: z.number().optional(),
+});
+
+// Progress schemas
+const appendProgressSchema = z.object({
+  section: z.string().min(1),
+  content: z.string().min(1),
 });
 
 // === Core CRUD Routes ===
@@ -1078,6 +1088,82 @@ router.post(
     });
 
     res.json({ archived, count: archived.length, failed });
+  })
+);
+
+// === Progress Routes ===
+
+/**
+ * GET /api/tasks/:id/progress - Get progress file for a task
+ */
+router.get(
+  '/:id/progress',
+  asyncHandler(async (req, res) => {
+    const taskId = req.params.id as string;
+    const task = await taskService.getTask(taskId);
+
+    if (!task) {
+      throw new NotFoundError('Task not found');
+    }
+
+    const progress = await progressService.getProgress(taskId);
+
+    // Return empty string if no progress file exists yet
+    res.json({ content: progress || '' });
+  })
+);
+
+/**
+ * PUT /api/tasks/:id/progress - Update (overwrite) progress file
+ */
+router.put(
+  '/:id/progress',
+  asyncHandler(async (req, res) => {
+    const taskId = req.params.id as string;
+    const task = await taskService.getTask(taskId);
+
+    if (!task) {
+      throw new NotFoundError('Task not found');
+    }
+
+    const { content } = req.body;
+
+    if (typeof content !== 'string') {
+      throw new ValidationError('Content must be a string');
+    }
+
+    await progressService.updateProgress(taskId, content);
+
+    res.json({ success: true });
+  })
+);
+
+/**
+ * POST /api/tasks/:id/progress/append - Append content to progress file section
+ */
+router.post(
+  '/:id/progress/append',
+  asyncHandler(async (req, res) => {
+    const taskId = req.params.id as string;
+    const task = await taskService.getTask(taskId);
+
+    if (!task) {
+      throw new NotFoundError('Task not found');
+    }
+
+    let input: { section: string; content: string };
+    try {
+      input = appendProgressSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new ValidationError('Validation failed', error.errors);
+      }
+      throw error;
+    }
+
+    await progressService.appendProgress(taskId, input.section, input.content);
+
+    res.json({ success: true });
   })
 );
 

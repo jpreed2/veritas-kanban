@@ -8,6 +8,7 @@ import { useTaskTypes, getTypeIcon } from '@/hooks/useTaskTypes';
 import { useFeatureSettings } from '@/hooks/useFeatureSettings';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { TaskDetailsTab } from './detail/TaskDetailsTab';
+import { ProgressTab } from './detail/ProgressTab';
 import { GitSection } from './GitSection';
 import { AgentPanel } from './AgentPanel';
 import { DiffViewer } from './DiffViewer';
@@ -29,6 +30,7 @@ import {
   Archive,
   BarChart3,
   MessageSquare,
+  NotebookPen,
 } from 'lucide-react';
 import type { Task, ReviewComment, ReviewState } from '@veritas-kanban/shared';
 
@@ -155,9 +157,13 @@ export function TaskDetailPanel({
           className="flex-1 flex flex-col overflow-hidden mt-3"
         >
           <TabsList
-            className={`grid w-full flex-shrink-0 ${isCodeTask ? (taskSettings.enableAttachments ? 'grid-cols-7' : 'grid-cols-6') : taskSettings.enableAttachments ? 'grid-cols-3' : 'grid-cols-2'}`}
+            className={`grid w-full flex-shrink-0 ${isCodeTask ? (taskSettings.enableAttachments ? 'grid-cols-8' : 'grid-cols-7') : taskSettings.enableAttachments ? 'grid-cols-4' : 'grid-cols-3'}`}
           >
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center gap-1">
+              <NotebookPen className="h-3 w-3" />
+              Progress
+            </TabsTrigger>
             {taskSettings.enableAttachments && (
               <TabsTrigger value="attachments" className="flex items-center gap-1">
                 <Paperclip className="h-3 w-3" />
@@ -204,6 +210,13 @@ export function TaskDetailPanel({
                 readOnly={readOnly}
                 onRestore={onRestore}
               />
+            </TabsContent>
+
+            {/* Progress Tab */}
+            <TabsContent value="progress" className="mt-0">
+              <FeatureErrorBoundary fallbackTitle="Progress section failed to load">
+                <ProgressTab task={localTask} />
+              </FeatureErrorBoundary>
             </TabsContent>
 
             {/* Attachments Tab */}

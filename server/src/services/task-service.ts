@@ -667,6 +667,11 @@ export class TaskService {
     const attachmentService = getAttachmentService();
     await attachmentService.archiveAttachments(id);
 
+    // Delete progress file (cleanup when archived)
+    const { getProgressService } = await import('./progress-service.js');
+    const progressService = getProgressService();
+    await progressService.deleteProgress(id);
+
     // Emit telemetry event
     await this.telemetry.emit<TaskTelemetryEvent>({
       type: 'task.archived',

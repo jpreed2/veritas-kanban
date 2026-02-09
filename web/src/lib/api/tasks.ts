@@ -87,12 +87,16 @@ export const tasksApi = {
     return handleResponse<{ archived: number; taskIds: string[] }>(response);
   },
 
-  addSubtask: async (taskId: string, title: string): Promise<Task> => {
+  addSubtask: async (
+    taskId: string,
+    title: string,
+    acceptanceCriteria?: string[]
+  ): Promise<Task> => {
     const response = await fetch(`${API_BASE}/tasks/${taskId}/subtasks`, {
       credentials: 'include',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, acceptanceCriteria }),
     });
     return handleResponse<Task>(response);
   },
@@ -116,6 +120,21 @@ export const tasksApi = {
       credentials: 'include',
       method: 'DELETE',
     });
+    return handleResponse<Task>(response);
+  },
+
+  toggleSubtaskCriteria: async (
+    taskId: string,
+    subtaskId: string,
+    criteriaIndex: number
+  ): Promise<Task> => {
+    const response = await fetch(
+      `${API_BASE}/tasks/${taskId}/subtasks/${subtaskId}/criteria/${criteriaIndex}`,
+      {
+        credentials: 'include',
+        method: 'PATCH',
+      }
+    );
     return handleResponse<Task>(response);
   },
 
@@ -287,6 +306,33 @@ export const tasksApi = {
       body: JSON.stringify({ ids }),
     });
     return handleResponse(response);
+  },
+
+  // Progress
+  fetchProgress: async (taskId: string): Promise<string> => {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/progress`);
+    const data = await handleResponse<{ content: string }>(response);
+    return data.content;
+  },
+
+  updateProgress: async (taskId: string, content: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/progress`, {
+      credentials: 'include',
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    return handleResponse<void>(response);
+  },
+
+  appendProgress: async (taskId: string, section: string, content: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/progress/append`, {
+      credentials: 'include',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section, content }),
+    });
+    return handleResponse<void>(response);
   },
 };
 

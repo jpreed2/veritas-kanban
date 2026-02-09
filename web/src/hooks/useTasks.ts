@@ -298,8 +298,15 @@ export function useAddSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ taskId, title }: { taskId: string; title: string }) =>
-      api.tasks.addSubtask(taskId, title),
+    mutationFn: ({
+      taskId,
+      title,
+      acceptanceCriteria,
+    }: {
+      taskId: string;
+      title: string;
+      acceptanceCriteria?: string[];
+    }) => api.tasks.addSubtask(taskId, title, acceptanceCriteria),
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.setQueryData(['tasks', task.id], task);
@@ -333,6 +340,26 @@ export function useDeleteSubtask() {
   return useMutation({
     mutationFn: ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) =>
       api.tasks.deleteSubtask(taskId, subtaskId),
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.setQueryData(['tasks', task.id], task);
+    },
+  });
+}
+
+export function useToggleSubtaskCriteria() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      subtaskId,
+      criteriaIndex,
+    }: {
+      taskId: string;
+      subtaskId: string;
+      criteriaIndex: number;
+    }) => api.tasks.toggleSubtaskCriteria(taskId, subtaskId, criteriaIndex),
     onSuccess: (task) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.setQueryData(['tasks', task.id], task);
