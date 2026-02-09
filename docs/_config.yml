@@ -1,0 +1,12 @@
+# Jekyll configuration for GitHub Pages
+# Exclude workflow engine docs (contain {{ template syntax that conflicts with Liquid)
+exclude:
+  - PHASE1_CODE_REVIEW.md
+  - PHASE1_CODE_REVIEW_FINAL.md
+  - PHASE1_IMPLEMENTATION_NOTES.md
+  - PHASE2_CODE_REVIEW_FINAL.md
+  - PHASE2_IMPLEMENTATION_NOTES.md
+  - WORKFLOW_ENGINE_ARCHITECTURE.md
+  - WORKFLOW_ENGINE_REVIEW.md
+  - WORKFLOW_ENGINE_REVIEW_R2.md
+  - DEPLOYMENT.md
