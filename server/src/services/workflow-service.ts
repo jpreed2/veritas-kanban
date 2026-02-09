@@ -12,6 +12,7 @@ import { getWorkflowsDir } from '../utils/paths.js';
 import { createLogger } from '../lib/logger.js';
 
 const log = createLogger('workflow-service');
+const WORKFLOW_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9-_]*$/;
 
 export class WorkflowService {
   private workflowsDir: string;
@@ -26,16 +27,37 @@ export class WorkflowService {
     await fs.mkdir(this.workflowsDir, { recursive: true });
   }
 
+  private normalizeWorkflowId(id: string): string {
+    const trimmed = (id ?? '').trim();
+    if (!trimmed) {
+      throw new ValidationError('Workflow ID is required');
+    }
+
+    if (trimmed.includes('/') || trimmed.includes('\\') || trimmed.includes('..')) {
+      throw new ValidationError('Workflow ID contains illegal path characters');
+    }
+
+    if (!WORKFLOW_ID_PATTERN.test(trimmed)) {
+      throw new ValidationError(
+        'Workflow ID must start with an alphanumeric character and may only contain letters, numbers, hyphen, or underscore'
+      );
+    }
+
+    return trimmed;
+  }
+
   /**
    * Load and parse a workflow YAML file
    */
   async loadWorkflow(id: string): Promise<WorkflowDefinition | null> {
+    const normalizedId = this.normalizeWorkflowId(id);
+
     // Check cache first
-    if (this.cache.has(id)) {
-      return this.cache.get(id)!;
+    if (this.cache.has(normalizedId)) {
+      return this.cache.get(normalizedId)!;
     }
 
-    const filePath = path.join(this.workflowsDir, `${id}.yml`);
+    const filePath = path.join(this.workflowsDir, `${normalizedId}.yml`);
 
     try {
       const content = await fs.readFile(filePath, 'utf-8');
@@ -45,16 +67,16 @@ export class WorkflowService {
       this.validateWorkflow(workflow);
 
       // Cache it
-      this.cache.set(id, workflow);
+      this.cache.set(normalizedId, workflow);
 
-      log.info({ workflowId: id, version: workflow.version }, 'Workflow loaded');
+      log.info({ workflowId: normalizedId, version: workflow.version }, 'Workflow loaded');
       return workflow;
     } catch (err: any) {
       if (err.code === 'ENOENT') {
-        log.debug({ workflowId: id }, 'Workflow not found');
+        log.debug({ workflowId: normalizedId }, 'Workflow not found');
         return null;
       }
-      log.error({ workflowId: id, err }, 'Failed to load workflow');
+      log.error({ workflowId: normalizedId, err }, 'Failed to load workflow');
       throw new ValidationError(`Invalid workflow YAML: ${err.message}`);
     }
   }
@@ -86,26 +108,28 @@ export class WorkflowService {
   async saveWorkflow(workflow: WorkflowDefinition): Promise<void> {
     this.validateWorkflow(workflow);
 
-    const filePath = path.join(this.workflowsDir, `${workflow.id}.yml`);
+    const normalizedId = this.normalizeWorkflowId(workflow.id);
+    const filePath = path.join(this.workflowsDir, `${normalizedId}.yml`);
     const content = yaml.stringify(workflow);
 
     await fs.writeFile(filePath, content, 'utf-8');
 
     // Update cache
-    this.cache.set(workflow.id, workflow);
+    this.cache.set(normalizedId, workflow);
 
-    log.info({ workflowId: workflow.id, version: workflow.version }, 'Workflow saved');
+    log.info({ workflowId: normalizedId, version: workflow.version }, 'Workflow saved');
   }
 
   /**
    * Delete a workflow definition
    */
   async deleteWorkflow(id: string): Promise<void> {
-    const filePath = path.join(this.workflowsDir, `${id}.yml`);
+    const normalizedId = this.normalizeWorkflowId(id);
+    const filePath = path.join(this.workflowsDir, `${normalizedId}.yml`);
     await fs.unlink(filePath);
-    this.cache.delete(id);
+    this.cache.delete(normalizedId);
 
-    log.info({ workflowId: id }, 'Workflow deleted');
+    log.info({ workflowId: normalizedId }, 'Workflow deleted');
   }
 
   /**
@@ -115,6 +139,12 @@ export class WorkflowService {
     // Required fields
     if (!workflow.id || !workflow.name || workflow.version === undefined) {
       throw new ValidationError('Workflow must have id, name, and version');
+    }
+
+    // Enforce safe ID characters (prevents path traversal)
+    const normalizedId = this.normalizeWorkflowId(workflow.id);
+    if (workflow.id !== normalizedId) {
+      throw new ValidationError('Workflow ID contains invalid characters');
     }
 
     // At least one agent

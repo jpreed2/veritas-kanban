@@ -13,6 +13,7 @@ import { getWorkflowRunsDir } from '../utils/paths.js';
 import { createLogger } from '../lib/logger.js';
 
 const log = createLogger('workflow-run');
+const RUN_ID_PATTERN = /^run_\d{10,}_[a-zA-Z0-9_-]{6,}$/;
 
 class NotFoundError extends Error {
   constructor(message: string) {
@@ -42,6 +43,23 @@ export class WorkflowRunService {
 
   private async ensureDirectories(): Promise<void> {
     await fs.mkdir(this.runsDir, { recursive: true });
+  }
+
+  private normalizeRunId(runId: string): string {
+    const trimmed = (runId ?? '').trim();
+    if (!trimmed) {
+      throw new ValidationError('Run ID is required');
+    }
+
+    if (trimmed.includes('/') || trimmed.includes('\\') || trimmed.includes('..')) {
+      throw new ValidationError('Run ID contains illegal path characters');
+    }
+
+    if (!RUN_ID_PATTERN.test(trimmed)) {
+      throw new ValidationError('Run ID format is invalid');
+    }
+
+    return trimmed;
   }
 
   /**
@@ -110,18 +128,24 @@ export class WorkflowRunService {
    */
   private async executeRun(run: WorkflowRun, workflow: WorkflowDefinition): Promise<void> {
     try {
-      // Build initial step queue (for retry routing)
-      const stepQueue: string[] = workflow.steps.map((s) => s.id);
+      // Build initial step queue (skip already completed/skipped steps on resume)
+      const stepQueue: string[] = this.buildStepQueue(run, workflow);
 
       while (stepQueue.length > 0) {
         const stepId = stepQueue.shift()!;
         const step = workflow.steps.find((s) => s.id === stepId)!;
 
+        // Skip if step already completed/skipped (defensive when retry_step rebuilds queue)
+        const existingStepRun = run.steps.find((s) => s.stepId === step.id)!;
+        if (existingStepRun.status === 'completed' || existingStepRun.status === 'skipped') {
+          continue;
+        }
+
         // Update current step
         run.currentStep = step.id;
         await this.saveRun(run);
 
-        const stepRun = run.steps.find((s) => s.stepId === step.id)!;
+        const stepRun = existingStepRun;
         stepRun.status = 'running';
         stepRun.startedAt = new Date().toISOString();
         await this.saveRun(run);
@@ -154,7 +178,17 @@ export class WorkflowRunService {
             // No retry policy — fail the entire workflow
             throw err;
           }
+
+          if (run.status === 'blocked') {
+            log.info({ runId: run.id, stepId: step.id }, 'Workflow run blocked — awaiting resume');
+            return;
+          }
         }
+      }
+
+      if (run.status === 'blocked') {
+        log.info({ runId: run.id }, 'Workflow run remains blocked');
+        return;
       }
 
       // All steps completed
@@ -263,7 +297,8 @@ export class WorkflowRunService {
    * Get a workflow run by ID
    */
   async getRun(runId: string): Promise<WorkflowRun | null> {
-    const runPath = path.join(this.runsDir, runId, 'run.json');
+    const safeRunId = this.normalizeRunId(runId);
+    const runPath = path.join(this.runsDir, safeRunId, 'run.json');
 
     try {
       const content = await fs.readFile(runPath, 'utf-8');
@@ -288,7 +323,17 @@ export class WorkflowRunService {
     for (const dir of runDirs) {
       if (!dir.startsWith('run_')) continue;
 
-      const run = await this.getRun(dir);
+      let run: WorkflowRun | null = null;
+      try {
+        run = await this.getRun(dir);
+      } catch (err) {
+        if (err instanceof ValidationError) {
+          log.warn({ runDir: dir }, 'Skipping run directory with invalid ID');
+          continue;
+        }
+        throw err;
+      }
+
       if (!run) continue;
 
       // Apply filters
@@ -336,6 +381,16 @@ export class WorkflowRunService {
     });
 
     return run;
+  }
+
+  private buildStepQueue(run: WorkflowRun, workflow: WorkflowDefinition): string[] {
+    return workflow.steps
+      .filter((step) => {
+        const state = run.steps.find((s) => s.stepId === step.id);
+        if (!state) return true;
+        return state.status !== 'completed' && state.status !== 'skipped';
+      })
+      .map((step) => step.id);
   }
 
   /**
