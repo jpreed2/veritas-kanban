@@ -63,6 +63,61 @@ const DEFAULT_POLICIES: ToolPolicy[] = [
     description:
       'Full access for deployment operations. Can execute deployment scripts, modify configs, and interact with production systems.',
   },
+  {
+    role: 'researcher',
+    allowed: ['Read', 'web_search', 'web_fetch', 'browser', 'image', 'memory_search', 'memory_get'],
+    denied: ['Write', 'Edit', 'exec', 'message', 'cron', 'nodes'],
+    description:
+      'Research-focused access. Can read files, search the web, browse pages, and query memory. Cannot modify files, run commands, or send messages.',
+  },
+  {
+    role: 'orchestrator',
+    allowed: [
+      'Read',
+      'web_search',
+      'web_fetch',
+      'browser',
+      'image',
+      'message',
+      'cron',
+      'memory_search',
+      'memory_get',
+      'sessions_spawn',
+      'sessions_send',
+      'sessions_list',
+      'sessions_history',
+      'session_status',
+      'nodes',
+    ],
+    denied: ['Write', 'Edit', 'exec'],
+    description:
+      'PM/orchestrator role. Can read, search, communicate, spawn sub-agents, and manage schedules. Cannot directly write code or execute commands — delegates to workers.',
+  },
+  {
+    role: 'content-writer',
+    allowed: [
+      'Read',
+      'Write',
+      'Edit',
+      'web_search',
+      'web_fetch',
+      'browser',
+      'image',
+      'memory_search',
+      'memory_get',
+      'tts',
+    ],
+    denied: ['exec', 'message', 'cron', 'nodes'],
+    description:
+      'Content creation access. Can read, write, and edit files, search the web, and generate speech. Cannot execute commands, send messages, or manage infrastructure.',
+  },
+  {
+    role: 'intern',
+    allowed: ['Read', 'web_search', 'web_fetch', 'image', 'memory_search', 'memory_get'],
+    denied: ['Write', 'Edit', 'exec', 'browser', 'message', 'cron', 'nodes', 'tts'],
+    description:
+      'Observation-only access. Can read files, search the web, and query memory. Cannot write, execute, browse interactively, or communicate. Ideal for learning agents or sandboxed analysis.',
+  },
 ];
 
 export class ToolPolicyService {
