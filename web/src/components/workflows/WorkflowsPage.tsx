@@ -8,7 +8,7 @@
  * - Empty state when no workflows exist
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ export function WorkflowsPage({ onBack }: WorkflowsPageProps) {
   const { toast } = useToast();
 
   // Fetch workflows on mount
-  useMemo(() => {
+  useEffect(() => {
     const fetchWorkflows = async () => {
       try {
         const response = await fetch('/api/workflows');

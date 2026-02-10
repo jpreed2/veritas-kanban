@@ -82,14 +82,6 @@ export function WorkflowRunView({ runId, onBack }: WorkflowRunViewProps) {
       if (!response.ok) throw new Error('Failed to fetch workflow run');
       const data = await response.json();
       setRun(data);
-
-      // Fetch workflow definition if not already loaded
-      if (!workflow || workflow.id !== data.workflowId) {
-        const workflowResponse = await fetch(`/api/workflows/${data.workflowId}`);
-        if (workflowResponse.ok) {
-          setWorkflow(await workflowResponse.json());
-        }
-      }
     } catch (error) {
       toast({
         title: '❌ Failed to load workflow run',
@@ -98,12 +90,33 @@ export function WorkflowRunView({ runId, onBack }: WorkflowRunViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [runId, workflow, toast]);
+  }, [runId, toast]);
 
   // Initial fetch
   useEffect(() => {
     fetchRun();
   }, [fetchRun]);
+
+  // Fetch workflow definition when run loads or changes
+  useEffect(() => {
+    if (!run) return;
+
+    const fetchWorkflow = async () => {
+      try {
+        const workflowResponse = await fetch(`/api/workflows/${run.workflowId}`);
+        if (workflowResponse.ok) {
+          setWorkflow(await workflowResponse.json());
+        }
+      } catch (error) {
+        // Silently fail if workflow fetch fails (run data is more important)
+        console.error('Failed to fetch workflow definition:', error);
+      }
+    };
+
+    if (!workflow || workflow.id !== run.workflowId) {
+      fetchWorkflow();
+    }
+  }, [run, workflow]);
 
   // WebSocket subscription for live updates
   useEffect(() => {
