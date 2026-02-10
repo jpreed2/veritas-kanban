@@ -3,6 +3,9 @@
  * GitHub Issue: #110
  *
  * CRUD operations for role-based tool access policies.
+ *
+ * NOTE: The responseEnvelopeMiddleware auto-wraps all res.json() calls in
+ * { success, data, meta }. Do NOT manually wrap responses here.
  */
 
 import express from 'express';
@@ -51,15 +54,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const policies = await toolPolicyService.listPolicies();
-
-    res.json({
-      success: true,
-      data: policies,
-      meta: {
-        timestamp: new Date().toISOString(),
-        count: policies.length,
-      },
-    });
+    res.json(policies);
   })
 );
 
@@ -71,27 +66,14 @@ router.get(
   '/:role',
   asyncHandler(async (req, res) => {
     const { role } = RoleParamSchema.parse(req.params);
-
     const policy = await toolPolicyService.getToolPolicy(role);
 
     if (!policy) {
-      res.status(404).json({
-        success: false,
-        error: `Tool policy not found for role: ${role}`,
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
+      res.status(404).json({ error: `Tool policy not found for role: ${role}` });
       return;
     }
 
-    res.json({
-      success: true,
-      data: policy,
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    });
+    res.json(policy);
   })
 );
 
@@ -103,17 +85,8 @@ router.post(
   '/',
   asyncHandler(async (req, res) => {
     const policy = ToolPolicySchema.parse(req.body);
-
     await toolPolicyService.savePolicy(policy);
-
-    res.status(201).json({
-      success: true,
-      data: policy,
-      meta: {
-        timestamp: new Date().toISOString(),
-        message: `Tool policy created for role: ${policy.role}`,
-      },
-    });
+    res.status(201).json(policy);
   })
 );
 
@@ -127,41 +100,19 @@ router.put(
     const { role } = RoleParamSchema.parse(req.params);
     const policyData = ToolPolicySchema.parse(req.body);
 
-    // Ensure the role in the URL matches the role in the body
     if (policyData.role.toLowerCase() !== role.toLowerCase()) {
-      res.status(400).json({
-        success: false,
-        error: 'Role in URL does not match role in request body',
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
+      res.status(400).json({ error: 'Role in URL does not match role in request body' });
       return;
     }
 
-    // Check if policy exists
     const existing = await toolPolicyService.getToolPolicy(role);
     if (!existing) {
-      res.status(404).json({
-        success: false,
-        error: `Tool policy not found for role: ${role}`,
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
+      res.status(404).json({ error: `Tool policy not found for role: ${role}` });
       return;
     }
 
     await toolPolicyService.savePolicy(policyData);
-
-    res.json({
-      success: true,
-      data: policyData,
-      meta: {
-        timestamp: new Date().toISOString(),
-        message: `Tool policy updated for role: ${role}`,
-      },
-    });
+    res.json(policyData);
   })
 );
 
@@ -173,16 +124,8 @@ router.delete(
   '/:role',
   asyncHandler(async (req, res) => {
     const { role } = RoleParamSchema.parse(req.params);
-
     await toolPolicyService.deletePolicy(role);
-
-    res.json({
-      success: true,
-      meta: {
-        timestamp: new Date().toISOString(),
-        message: `Tool policy deleted for role: ${role}`,
-      },
-    });
+    res.json({ deleted: role });
   })
 );
 
@@ -195,20 +138,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const { role } = RoleParamSchema.parse(req.params);
     const { tool } = z.object({ tool: z.string().min(1) }).parse(req.body);
-
     const allowed = await toolPolicyService.validateToolAccess(role, tool);
-
-    res.json({
-      success: true,
-      data: {
-        role,
-        tool,
-        allowed,
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    });
+    res.json({ role, tool, allowed });
   })
 );
 
@@ -218,39 +149,17 @@ router.use(
   (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     log.error({ err, path: req.path, method: req.method }, 'Tool policy route error');
 
-    // Zod validation errors
     if (err instanceof z.ZodError) {
-      res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        details: err.errors,
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
+      res.status(400).json({ error: 'Validation failed', details: err.errors });
       return;
     }
 
-    // Validation errors from service
     if (err.name === 'ValidationError') {
-      res.status(400).json({
-        success: false,
-        error: err.message,
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
+      res.status(400).json({ error: err.message });
       return;
     }
 
-    // Generic errors
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      meta: {
-        timestamp: new Date().toISOString(),
-      },
-    });
+    res.status(500).json({ error: 'Internal server error' });
   }
 );
 
