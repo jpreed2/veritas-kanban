@@ -120,7 +120,8 @@ export function WorkflowRunView({ runId, onBack }: WorkflowRunViewProps) {
 
   // WebSocket subscription for live updates
   useEffect(() => {
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
 
     ws.onopen = () => {
       console.log('[WorkflowRunView] WebSocket connected');

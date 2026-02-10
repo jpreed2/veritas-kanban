@@ -98,7 +98,7 @@ export function WorkflowSection({ task, open, onOpenChange }: WorkflowSectionPro
       });
 
       // Add to active runs
-      setActiveRuns([...activeRuns, run]);
+      setActiveRuns((previousRuns) => [...previousRuns, run]);
     } catch (error) {
       toast({
         title: '❌ Failed to start workflow run',
