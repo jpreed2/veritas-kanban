@@ -85,7 +85,7 @@ export function WorkflowSection({ task, open, onOpenChange }: WorkflowSectionPro
   const handleStartWorkflow = async (workflowId: string) => {
     setIsStarting(workflowId);
     try {
-      const response = await fetch(`/api/workflows/${workflowId}/run`, {
+      const response = await fetch(`/api/workflows/${workflowId}/runs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskId: task.id }),

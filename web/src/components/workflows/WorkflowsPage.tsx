@@ -73,7 +73,7 @@ export function WorkflowsPage({ onBack }: WorkflowsPageProps) {
 
   const handleStartRun = async (workflowId: string) => {
     try {
-      const response = await fetch(`/api/workflows/${workflowId}/run`, {
+      const response = await fetch(`/api/workflows/${workflowId}/runs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
