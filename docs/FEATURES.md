@@ -12,6 +12,7 @@ Complete feature reference for Veritas Kanban. For a quick overview, see the [RE
 - [Task Templates](#task-templates-v160)
 - [Code Workflow](#code-workflow)
 - [AI Agent Integration](#ai-agent-integration)
+- [PRD-Driven Autonomous Development](#prd-driven-autonomous-development)
 - [Multi-Agent System (v2.0)](#multi-agent-system-v200)
 - [Lifecycle Automation (v2.0)](#lifecycle-automation-v200)
 - [GitHub Issues Sync](#github-issues-sync)
@@ -206,8 +207,76 @@ First-class support for autonomous coding agents.
 
 ---
 
-## Multi-Agent System (v2.0.0)
+## PRD-Driven Autonomous Development
 
+Transform product requirements into working code through iterative, quality-gated autonomous execution.
+
+> 📖 **Detailed guide:** [features/prd-driven-development.md](features/prd-driven-development.md)
+
+### Overview
+
+PRD-Driven Autonomous Development is a pattern where an AI agent reads a product requirements document (PRD), breaks it into implementable user stories, autonomously codes each story with quality gates, commits the work, and iterates until all stories are complete. Each iteration runs in fresh context, with memory preserved through git history, progress files, and the PRD itself.
+
+**Why it works:**
+
+- **Predictable quality** — Enforcement gates (reviewGate, closingComments, autoTelemetry) ensure deterministic checks
+- **Compound learning** — Progress files capture lessons; later iterations benefit from earlier ones
+- **Fresh context per iteration** — Each story starts clean; no context window bloat
+- **Real-time visibility** — Squad Chat shows exactly what agents are doing each iteration
+- **Full audit trail** — Git history + telemetry + time tracking = complete execution record
+
+### How VK Supports This
+
+Veritas Kanban provides native infrastructure for every phase:
+
+| Phase                    | VK Feature                   | What It Does                                                   |
+| ------------------------ | ---------------------------- | -------------------------------------------------------------- |
+| **Requirements**         | Task Templates               | Define PRD-style templates with user stories as subtasks       |
+| **Story Breakdown**      | Subtasks & Dependencies      | Break PRDs into implementable stories with acceptance criteria |
+| **Autonomous Execution** | Sub-agent orchestration      | `sessions_spawn` for fresh-context iterations per story        |
+| **Quality Gates**        | Enforcement Gates            | reviewGate (4×10 scoring), closingComments, autoTelemetry      |
+| **Real-Time Monitoring** | Squad Chat                   | Live narrative of agent progress, step-by-step                 |
+| **Memory Persistence**   | Git Workflow + Time Tracking | Worktree isolation, automatic commits, full time accounting    |
+| **Success Tracking**     | Telemetry & Analytics        | Run success rates, token usage, duration metrics per story     |
+
+### Quick Start
+
+1. **Create PRD template** — Define reusable template with user stories as subtasks, enforcement gates enabled
+2. **Instantiate task** — Apply template via UI or CLI: `vk create "Feature: OAuth2 Integration" --template "feature-dev-prd"`
+3. **Start autonomous execution** — Spawn agent: `vk automation:start {{task.id}}`
+4. **Monitor via Squad Chat** — Watch real-time progress as agent implements each story
+5. **Review and merge** — After quality gates pass, review in Diff tab and merge
+
+### When to Use
+
+**✅ Good for:**
+
+- Clear requirements with well-defined user stories
+- Independent stories (no tight coupling)
+- Measurable quality (tests, linters, typecheck)
+- Small iterations (≤30 min per story)
+- Reproducible execution
+
+**❌ Not for:**
+
+- Vague requirements or exploratory work
+- Complex architectural decisions
+- High-risk changes (migrations, auth)
+- Research tasks
+
+### Example Result
+
+```
+Feature: OAuth2 Social Login (6 stories)
+├─ 6 commits (one per story)
+├─ 27 files changed
+├─ 43 minutes total duration
+├─ 156k tokens consumed
+├─ 100% test coverage
+└─ Zero security issues
+```
+
+See the [full guide](features/prd-driven-development.md) for detailed workflow steps, configuration tips, and a complete OAuth2 feature example walkthrough.
 Full multi-agent orchestration platform with service discovery, assignment, permissions, and communication.
 
 ### Agent Registry (#52)
