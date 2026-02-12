@@ -16,7 +16,7 @@ export function EnforcementTab() {
     });
   };
 
-  const enforcement = settings.enforcement || {};
+  const enforcement = settings.enforcement ?? DEFAULT_FEATURE_SETTINGS.enforcement;
 
   return (
     <div className="space-y-4">
@@ -34,7 +34,7 @@ export function EnforcementTab() {
             <ToggleRow
               label="Review Gate"
               description="Require 4x10 review scores before task completion"
-              checked={enforcement.reviewGate || false}
+              checked={enforcement.reviewGate ?? false}
               onCheckedChange={(v) => updateEnforcement('reviewGate', v)}
             />
             {enforcement.reviewGate && (
@@ -47,7 +47,7 @@ export function EnforcementTab() {
           <ToggleRow
             label="Closing Comments"
             description="Require deliverable summary before task completion"
-            checked={enforcement.closingComments || false}
+            checked={enforcement.closingComments ?? false}
             onCheckedChange={(v) => updateEnforcement('closingComments', v)}
           />
         </div>
@@ -62,25 +62,25 @@ export function EnforcementTab() {
           <ToggleRow
             label="Squad Chat"
             description="Auto-post task lifecycle events to squad chat"
-            checked={enforcement.squadChat || false}
+            checked={enforcement.squadChat ?? false}
             onCheckedChange={(v) => updateEnforcement('squadChat', v)}
           />
           <ToggleRow
             label="Auto Telemetry"
             description="Auto-emit run events on status changes"
-            checked={enforcement.autoTelemetry || false}
+            checked={enforcement.autoTelemetry ?? false}
             onCheckedChange={(v) => updateEnforcement('autoTelemetry', v)}
           />
           <ToggleRow
             label="Auto Time Tracking"
             description="Auto-start/stop timers on status changes"
-            checked={enforcement.autoTimeTracking || false}
+            checked={enforcement.autoTimeTracking ?? false}
             onCheckedChange={(v) => updateEnforcement('autoTimeTracking', v)}
           />
           <ToggleRow
             label="Orchestrator Delegation"
             description="Warn when orchestrator does work instead of delegating"
-            checked={enforcement.orchestratorDelegation || false}
+            checked={enforcement.orchestratorDelegation ?? false}
             onCheckedChange={(v) => updateEnforcement('orchestratorDelegation', v)}
           />
         </div>

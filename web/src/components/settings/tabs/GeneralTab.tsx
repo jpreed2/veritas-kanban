@@ -43,6 +43,7 @@ import {
   User,
 } from 'lucide-react';
 import type { RepoConfig, AgentConfig } from '@veritas-kanban/shared';
+import { DEFAULT_FEATURE_SETTINGS } from '@veritas-kanban/shared';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -52,7 +53,9 @@ export function GeneralTab() {
   const { theme, setTheme } = useTheme();
   const { settings } = useFeatureSettings();
   const { debouncedUpdate } = useDebouncedFeatureUpdate();
-  const [localDisplayName, setLocalDisplayName] = useState(settings.general.humanDisplayName);
+  const [localDisplayName, setLocalDisplayName] = useState(
+    settings.general?.humanDisplayName ?? DEFAULT_FEATURE_SETTINGS.general.humanDisplayName
+  );
 
   return (
     <div className="space-y-6">
