@@ -221,28 +221,32 @@ export class ConfigService {
   async updateFeatureSettings(patch: Record<string, unknown>): Promise<FeatureSettings> {
     const config = await this.getConfig();
     const current = config.features || DEFAULT_FEATURE_SETTINGS;
-    // Deep merge the patch into current settings
-    const merged = deepMergeDefaults(patch as Partial<FeatureSettings>, current);
-    // Also merge any new keys from patch that aren't in defaults
+
+    // Deep merge: start with current, apply patch updates
     // SAFETY: FeatureSettings sections are all objects with string keys
-    const mergedRecord = merged as unknown as Record<string, Record<string, unknown>>;
+    const merged = { ...current } as unknown as Record<string, Record<string, unknown>>;
+
     for (const section of Object.keys(patch)) {
       const patchSection = patch[section];
       if (
-        section in mergedRecord &&
         typeof patchSection === 'object' &&
         patchSection !== null &&
         !Array.isArray(patchSection)
       ) {
-        mergedRecord[section] = {
-          ...mergedRecord[section],
+        // Merge section: preserve existing keys, override with patch
+        merged[section] = {
+          ...(merged[section] || {}),
           ...(patchSection as Record<string, unknown>),
         };
+      } else {
+        // Non-object value (shouldn't happen with current schema, but handle it)
+        merged[section] = patchSection as any;
       }
     }
-    config.features = merged;
+
+    config.features = merged as unknown as FeatureSettings;
     await this.saveConfig(config);
-    return merged;
+    return config.features;
   }
 
   async saveConfig(config: AppConfig): Promise<void> {
