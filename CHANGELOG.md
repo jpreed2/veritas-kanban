@@ -5,6 +5,29 @@ All notable changes to Veritas Kanban are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **reviewGate enforcement** — Now only applies to code task types (code, bug, feature, automation, system) — research, content, and custom types no longer blocked
+- **Defensive settings access** — Prevents crash on missing config sections across all 8 settings tabs (General, Enforcement, Time Tracking, Agents, Projects, Sprints, Templates, Types)
+- **Settings toggle persistence** — Fixed deepMergeDefaults overwriting user changes; now uses proper patch merging to preserve toggle states
+- **SharedResources toggle persistence** — SharedResources and DocFreshness enabled/disabled states now correctly saved to `settings.json`
+- **Squad chat visibility** — System messages now render as gray message bubbles (previously invisible dividers)
+- **Time tracking telemetry** — Fixed corrupt 17K-hour entry, added 7-day (604,800,000 ms) cap on `durationMs` validation
+- **Archived task reappearance** — Tasks no longer reappear on board after archival (orphaned files from title changes now cleaned up via `findTaskFile`)
+- **EnforcementTab formatting** — reviewGate warning text properly formatted, "Quality Gates" duplicate header removed
+
+### Added
+
+- **PRD-Driven Autonomous Development guide** — Complete 961-line guide at `docs/features/prd-driven-development.md` covering setup, agent execution workflow, OAuth2 example, configuration tips, and troubleshooting
+- **Time tracking bugfix post-mortem** — Documented 17K-hour telemetry bug in `docs/bugfix-time-tracking-17k-hours.md`
+
+### Changed
+
+- **Consistent gray styling** — Squad chat system messages now use muted theme tokens for subtle gray appearance
+- **Theme token usage** — Settings UI updated to use Shadcn theme tokens instead of hardcoded Tailwind colors
+
 ## [3.2.0] - 2026-02-11
 
 ### Added
