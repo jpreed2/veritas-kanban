@@ -289,9 +289,12 @@ const SquadMessageBubble = React.memo(function SquadMessageBubble({
   humanDisplayName,
 }: SquadMessageBubbleProps) {
   // Case-insensitive agent color lookup
-  const colorClass = agentColors[message.agent] 
-    || Object.entries(agentColors).find(([k]) => k.toLowerCase() === message.agent?.toLowerCase())?.[1]
-    || agentColors.VERITAS;
+  const colorClass =
+    agentColors[message.agent] ||
+    Object.entries(agentColors).find(
+      ([k]) => k.toLowerCase() === message.agent?.toLowerCase()
+    )?.[1] ||
+    agentColors.VERITAS;
   const isHuman = message.agent === 'Human';
   // Use the display name for Human agents, otherwise use the agent name
   const displayName = isHuman ? humanDisplayName : message.agent;
@@ -371,14 +374,49 @@ const SystemMessageDivider = React.memo(function SystemMessageDivider({
     }
   };
 
+  // Determine color scheme based on event type
+  const getColorScheme = () => {
+    switch (message.event) {
+      case 'agent.spawned':
+        return 'bg-blue-500/10 border-blue-500/30 text-blue-300';
+      case 'agent.completed':
+        return 'bg-green-500/10 border-green-500/30 text-green-300';
+      case 'agent.failed':
+        return 'bg-red-500/10 border-red-500/30 text-red-300';
+      case 'agent.status':
+        return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300';
+      default:
+        return 'bg-gray-500/10 border-gray-500/30 text-gray-300';
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3 py-2 text-xs text-muted-foreground/80">
-      <div className="flex-1 h-px bg-border" />
-      <div className="flex items-center gap-2 px-2 py-1 rounded bg-muted/30">
-        <span>{getEventIcon()}</span>
-        <span className="font-medium">{getEventText()}</span>
+    <div className={`rounded-lg border p-3 ${getColorScheme()}`}>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{getEventIcon()}</span>
+          <span className="font-semibold text-xs uppercase tracking-wide opacity-80">
+            System Message
+          </span>
+          {message.model && <span className="text-xs opacity-50 font-mono">{message.model}</span>}
+          {message.tags && message.tags.length > 0 && (
+            <div className="flex gap-1">
+              {message.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs px-1.5 py-0.5 rounded bg-background/50 border border-current/20"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <span className="text-xs opacity-70">
+          {new Date(message.timestamp).toLocaleTimeString()}
+        </span>
       </div>
-      <div className="flex-1 h-px bg-border" />
+      <div className="text-sm leading-relaxed">{getEventText()}</div>
     </div>
   );
 });
