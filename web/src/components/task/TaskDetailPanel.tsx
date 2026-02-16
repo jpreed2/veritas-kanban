@@ -55,6 +55,8 @@ export function TaskDetailPanel({
   onRestore,
 }: TaskDetailPanelProps) {
   const { data: taskTypes = [] } = useTaskTypes();
+  const addObservation = useAddObservation();
+  const deleteObservation = useDeleteObservation();
   const { settings: featureSettings } = useFeatureSettings();
   const taskSettings = featureSettings.tasks;
   const agentSettings = featureSettings.agents;

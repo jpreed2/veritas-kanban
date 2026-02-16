@@ -24,6 +24,10 @@ export type ActivityType =
   | 'template_applied'
   | 'comment_added'
   | 'comment_deleted'
+  | 'observation_added'
+  | 'observation_deleted'
+  | 'dependency_added'
+  | 'dependency_removed'
   | 'deliverable_added'
   | 'deliverable_updated'
   | 'deliverable_deleted';
